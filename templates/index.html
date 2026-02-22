@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="sticky-top">
+<header>
+  <h1 id="logo" style="cursor:pointer">Memebase{% if version %} <sup style="font-size:0.45em;vertical-align:super;color:#666;-webkit-text-fill-color:#666;font-weight:normal">v{{ version }}</sup>{% endif %}</h1>
+  <input type="search" id="search" placeholder="Search memes...">
+  <button id="clear-all" style="padding:0.5rem 0.75rem;border-radius:6px;border:1px solid #444;background:#16213e;color:#888;cursor:pointer;font-size:0.9rem">Clear</button>
+  <select id="sort">
+    <option value="newest">Newest</option>
+    <option value="name">Name</option>
+    <option value="oldest">Oldest</option>
+    <option value="copies">Most copied</option>
+    <option value="favorites">Favorites</option>
+  </select>
+  <button class="btn-add" id="btn-add">+ Add</button>
+</header>
+<div class="select-bar" id="select-bar">
+  <span id="sel-count">0 selected</span>
+  <button class="btn-auto" id="sel-auto">Auto</button>
+  <button class="btn-tag-sel" id="sel-tag">Edit tags</button>
+  <button class="btn-delete" id="sel-delete">Delete</button>
+  <button class="btn-select-all" id="sel-all">Select all</button>
+  <button class="btn-clear-sel" id="sel-clear">Clear</button>
+</div>
+
+<dialog id="bulk-modal">
+  <div class="modal-body">
+    <h3 id="bulk-title">Edit tags for 0 memes</h3>
+    <div>
+      <label for="bulk-add">Add tags (comma-separated)</label>
+      <input id="bulk-add" type="text" placeholder="e.g. reaction, funny">
+    </div>
+    <div>
+      <label for="bulk-remove">Remove tags (comma-separated)</label>
+      <input id="bulk-remove" type="text" placeholder="e.g. old, misc">
+    </div>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button class="btn-close" id="bulk-cancel">Cancel</button>
+      <button class="btn-save" id="bulk-save">Apply</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="auto-modal">
+  <div class="modal-body">
+    <h3 id="auto-title">Auto-detect for 0 memes</h3>
+    <p style="font-size:0.85rem;color:#aaa">Choose which fields to set:</p>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:0.4rem 0.6rem;align-items:center">
+      <input type="checkbox" id="auto-name" checked> <label for="auto-name">Filename</label>
+      <input type="checkbox" id="auto-desc" checked> <label for="auto-desc">Description</label>
+      <input type="checkbox" id="auto-tags" checked> <label for="auto-tags">Tags</label>
+    </div>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button class="btn-close" id="auto-cancel">Cancel</button>
+      <button class="btn-save" id="auto-start">Start</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="add-modal" tabindex="-1">
+  <div class="modal-body">
+    <h3>Add memes</h3>
+    <div class="drop-zone" id="drop-zone">
+      <p>Drop files here or click to browse</p>
+      <p style="font-size:0.8rem;color:#666">Images &amp; videos</p>
+      <input type="file" id="file-input" multiple accept="image/*,video/*" hidden>
+    </div>
+    <div class="url-section">
+      <label for="url-input">Or download from URL</label>
+      <div class="url-row">
+        <input id="url-input" type="text" placeholder="https://example.com/image.png">
+        <button class="btn-download" id="url-download">Download</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button class="btn-close" id="add-cancel">Close</button>
+    </div>
+  </div>
+</dialog>
+<div class="filters" id="filters"></div>
+</div>
+<div class="grid" id="grid"></div>
+<div id="pagination"></div>
+
+<dialog id="modal">
+  <div class="modal-body">
+    <div id="m-media"></div>
+    <div class="modal-meta">
+      <span id="m-fav" class="modal-fav" title="Toggle favorite"></span>
+      <span id="m-date"></span>
+      <span id="m-size"></span>
+      <span style="flex:1"></span>
+      <button class="btn-meta" id="m-copy">Copy</button>
+    </div>
+    <div>
+      <label for="m-name">Filename</label>
+      <div class="name-row">
+        <input id="m-name" type="text">
+        <span class="name-ext" id="m-ext"></span>
+      </div>
+    </div>
+    <div>
+      <label for="m-tags">Tags (comma-separated)</label>
+      <input id="m-tags" type="text" placeholder="e.g. reaction, funny, pepe">
+    </div>
+    <div>
+      <label for="m-desc">Description</label>
+      <textarea id="m-desc"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-delete" id="m-delete">Delete</button>
+      <button class="btn-auto" id="m-auto-open">Auto</button>
+      <span style="flex:1"></span>
+      <button class="btn-close" id="m-cancel">Cancel</button>
+      <button class="btn-save" id="m-save">Save</button>
+    </div>
+  </div>
+</dialog>
+{% endblock %}

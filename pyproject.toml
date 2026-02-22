@@ -1,0 +1,19 @@
+[project]
+name = "memebase"
+version = "0.1.0"
+description = "Web-based meme manager"
+requires-python = ">=3.10"
+dependencies = ["flask>=3.0", "Pillow>=10.0", "litellm>=1.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pre-commit>=4.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

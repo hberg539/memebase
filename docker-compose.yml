@@ -1,0 +1,7 @@
+services:
+  memebase:
+    image: ghcr.io/hberg539/memebase:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data

@@ -1,0 +1,23 @@
+[grid]
+thumbnail_size = 200  # card width in pixels
+page_size = 50
+
+[ai]
+enabled = false
+# Any litellm-compatible model string works here. Examples:
+# "anthropic/claude-sonnet-4-5-20250929"  # Anthropic (needs ANTHROPIC_API_KEY)
+# "openai/gpt-4o"                         # OpenAI (needs OPENAI_API_KEY)
+# "deepseek/deepseek-chat"                # DeepSeek (needs DEEPSEEK_API_KEY)
+# "ollama/llama3.2-vision"                # Local Ollama (no key needed)
+model = "anthropic/claude-sonnet-4-5-20250929"
+parallel = 3  # max parallel requests for bulk auto-detect
+
+prompt = """
+You are a meme connoisseur analyzing a meme image. Be witty and think in classic meme language.
+Respond with JSON only, no markdown:
+{"name": "...", "description": "...", "tags": ["...", "..."]}
+
+- name: a short, funny, descriptive filename (no extension, lowercase, use underscores)
+- description: describe the meme so it's searchable — include key visual elements, text on the image, the meme template name if recognizable, and the joke/context. Be slightly witty but prioritize findability over humor.
+- tags: up to 5 short, lowercase tags for categorization and search. Prefer reusing existing tags from this list when they fit: {tags}. Only invent new tags when none of the existing ones apply.
+"""
