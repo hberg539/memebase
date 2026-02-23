@@ -97,25 +97,3 @@ function formatSize(bytes) {
 	}
 	return `${i === 0 ? size : size.toFixed(1)}\u00a0${units[i]}`;
 }
-
-/* -- Dialog animation -- */
-
-document.querySelectorAll("dialog").forEach((d) => {
-	const origClose = d.close.bind(d);
-	d.close = () => {
-		if (!d.open) return;
-		d.classList.add("closing");
-		d.addEventListener(
-			"transitionend",
-			() => {
-				d.classList.remove("closing");
-				origClose();
-			},
-			{ once: true },
-		);
-		setTimeout(() => {
-			d.classList.remove("closing");
-			origClose();
-		}, 200);
-	};
-});

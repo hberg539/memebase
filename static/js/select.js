@@ -62,13 +62,7 @@ document.getElementById("sel-all").addEventListener("click", () => {
 document.getElementById("sel-clear").addEventListener("click", clearSelection);
 
 document.addEventListener("keydown", (e) => {
-	if (
-		e.key === "Escape" &&
-		selectedUuids.size &&
-		!modal.open &&
-		!bulkModal.open &&
-		!document.getElementById("auto-modal").open
-	) {
+	if (e.key === "Escape" && selectedUuids.size && !anyDialogOpen()) {
 		clearSelection();
 	}
 });
@@ -76,39 +70,27 @@ document.addEventListener("keydown", (e) => {
 /* -- Bulk delete -- */
 
 const selDelBtn = document.getElementById("sel-delete");
-let selDelConfirm = false;
-selDelBtn.addEventListener("click", async () => {
-	if (!selDelConfirm) {
-		selDelConfirm = true;
-		selDelBtn.textContent = `Delete ${selectedUuids.size}?`;
-		selDelBtn.classList.add("confirm");
-		return;
-	}
-	const count = selectedUuids.size;
-	try {
-		const promises = [...selectedUuids].map((u) => Api.deleteMeme(u));
-		await Promise.all(promises);
-		showAlert(`Deleted ${count} meme${count > 1 ? "s" : ""}`, "success");
-		selectedUuids.forEach((u) => {
-			const card = grid.querySelector(`.card[data-uuid="${u}"]`);
-			if (card) card.classList.add("removing");
-		});
-		await new Promise((r) => setTimeout(r, 200));
-	} catch (e) {
-		showAlert(e.message || "Delete failed", "error");
-	}
-	selDelConfirm = false;
-	selDelBtn.textContent = "Delete";
-	selDelBtn.classList.remove("confirm");
-	clearSelection();
-	load(search.value);
-});
-
-function resetSelDelete() {
-	selDelConfirm = false;
-	selDelBtn.textContent = "Delete";
-	selDelBtn.classList.remove("confirm");
-}
+const resetSelDelete = confirmButton(
+	selDelBtn,
+	() => `Delete ${selectedUuids.size}?`,
+	async () => {
+		const count = selectedUuids.size;
+		try {
+			const promises = [...selectedUuids].map((u) => Api.deleteMeme(u));
+			await Promise.all(promises);
+			showAlert(`Deleted ${count} meme${count > 1 ? "s" : ""}`, "success");
+			selectedUuids.forEach((u) => {
+				const card = grid.querySelector(`.card[data-uuid="${u}"]`);
+				if (card) card.classList.add("removing");
+			});
+			await new Promise((r) => setTimeout(r, 200));
+		} catch (e) {
+			showAlert(e.message || "Delete failed", "error");
+		}
+		clearSelection();
+		load(search.value);
+	},
+);
 
 /* -- Bulk tag editing -- */
 
@@ -124,16 +106,7 @@ document.getElementById("sel-tag").addEventListener("click", () => {
 	bulkModal.showModal();
 });
 
-document.getElementById("bulk-cancel").addEventListener("click", () => bulkModal.close());
-bulkModal.addEventListener("click", (e) => {
-	if (e.target === bulkModal) bulkModal.close();
-});
-bulkModal.addEventListener("keydown", (e) => {
-	if (e.key === "Enter") {
-		e.preventDefault();
-		document.getElementById("bulk-save").click();
-	}
-});
+wireDialog(bulkModal, { cancel: "bulk-cancel", submit: "bulk-save" });
 
 document.getElementById("bulk-save").addEventListener("click", async () => {
 	const add = bulkAdd.value

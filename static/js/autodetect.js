@@ -20,16 +20,7 @@ function runParallelQueue(items, concurrency, processOne) {
 /* -- Auto-modal button wiring -- */
 {
 	const autoModal = document.getElementById("auto-modal");
-	document.getElementById("auto-cancel").addEventListener("click", () => autoModal.close());
-	autoModal.addEventListener("click", (e) => {
-		if (e.target === autoModal) autoModal.close();
-	});
-	autoModal.addEventListener("keydown", (e) => {
-		if (e.key === "Enter") {
-			e.preventDefault();
-			document.getElementById("auto-start").click();
-		}
-	});
+	wireDialog(autoModal, { cancel: "auto-cancel", submit: "auto-start" });
 	document.getElementById("auto-start").addEventListener("click", () => {
 		const fields = [];
 		if (document.getElementById("auto-name").checked) fields.push("name");

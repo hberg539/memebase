@@ -2,7 +2,6 @@
 
 const addBtn = document.getElementById("btn-add");
 const addModal = document.getElementById("add-modal");
-const addCancel = document.getElementById("add-cancel");
 const dropZone = document.getElementById("drop-zone");
 const fileInput = document.getElementById("file-input");
 const urlInput = document.getElementById("url-input");
@@ -14,10 +13,7 @@ addBtn.addEventListener("click", () => {
 	addModal.showModal();
 	addModal.focus();
 });
-addCancel.addEventListener("click", () => addModal.close());
-addModal.addEventListener("click", (e) => {
-	if (e.target === addModal) addModal.close();
-});
+wireDialog(addModal, { cancel: "add-cancel" });
 
 /* -- Drop zone -- */
 

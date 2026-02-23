@@ -12,7 +12,6 @@ let currentUuid = null;
 const autoOpenBtn = document.getElementById("m-auto-open");
 if (!window.AI_ENABLED) autoOpenBtn.style.display = "none";
 const delBtn = document.getElementById("m-delete");
-let delConfirm = false;
 
 /* -- Open modal (card click) -- */
 
@@ -103,13 +102,7 @@ document.getElementById("m-copy").addEventListener("click", () => {
 
 /* -- Delete -- */
 
-delBtn.addEventListener("click", async () => {
-	if (!delConfirm) {
-		delConfirm = true;
-		delBtn.textContent = "Really delete?";
-		delBtn.classList.add("confirm");
-		return;
-	}
+const resetDel = confirmButton(delBtn, "Really delete?", async () => {
 	try {
 		await Api.deleteMeme(currentUuid);
 		modal.close();
@@ -153,9 +146,7 @@ autoOpenBtn.addEventListener("click", () => {
 /* -- Close & keyboard -- */
 
 modal.addEventListener("close", () => {
-	delConfirm = false;
-	delBtn.textContent = "Delete";
-	delBtn.classList.remove("confirm");
+	resetDel();
 	const vid = mMedia.querySelector("video");
 	if (vid) {
 		vid.pause();
@@ -163,15 +154,8 @@ modal.addEventListener("close", () => {
 	}
 });
 
-document.getElementById("m-cancel").addEventListener("click", () => modal.close());
-modal.addEventListener("click", (e) => {
-	if (e.target === modal) modal.close();
-});
+wireDialog(modal, { cancel: "m-cancel", submit: "m-save" });
 modal.addEventListener("keydown", (e) => {
-	if (e.key === "Enter" && !e.shiftKey) {
-		e.preventDefault();
-		document.getElementById("m-save").click();
-	}
 	if (e.key === "f" && !e.target.matches("input, textarea")) {
 		e.preventDefault();
 		document.getElementById("m-fav").click();
