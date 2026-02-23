@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from typing import Any
 
@@ -14,7 +13,7 @@ def get_db() -> sqlite3.Connection:
 
 
 def init_db() -> None:
-    os.makedirs(MEMES_DIR, exist_ok=True)
+    MEMES_DIR.mkdir(parents=True, exist_ok=True)
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS memes (

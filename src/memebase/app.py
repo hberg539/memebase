@@ -1,5 +1,5 @@
 import logging
-import os
+from pathlib import Path
 
 from flask import (
     Flask,
@@ -44,15 +44,15 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 try:
-    with open(os.path.join(ROOT_DIR, "pyproject.toml"), "rb") as _f:
+    with open(ROOT_DIR / "pyproject.toml", "rb") as _f:
         VERSION = tomllib.load(_f)["project"]["version"]
 except Exception:
     VERSION = ""
 
 app = Flask(
     __name__,
-    template_folder=os.path.join(ROOT_DIR, "templates"),
-    static_folder=os.path.join(ROOT_DIR, "static"),
+    template_folder=str(ROOT_DIR / "templates"),
+    static_folder=str(ROOT_DIR / "static"),
 )
 
 
@@ -142,7 +142,7 @@ def upload_memes():
     results = []
     with get_db() as conn:
         for f in files:
-            ext = os.path.splitext(f.filename)[1].lower()
+            ext = Path(f.filename).suffix.lower()
             if ext not in ALLOWED_EXTENSIONS:
                 continue
 
@@ -186,16 +186,17 @@ def upload_from_url():
 
             if not filename:
                 path_part = urllib.parse.urlparse(url).path
-                filename = os.path.basename(path_part) or "download"
+                filename = Path(path_part).name or "download"
 
             # Ensure it has an allowed extension
-            ext = os.path.splitext(filename)[1].lower()
+            fp = Path(filename)
+            ext = fp.suffix.lower()
             if not ext:
                 ct = resp.headers.get("Content-Type", "")
                 ext = CONTENT_TYPE_TO_EXT.get(ct.split(";")[0].strip(), "")
                 filename += ext
 
-            if os.path.splitext(filename)[1].lower() not in ALLOWED_EXTENSIONS:
+            if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
                 return jsonify({"error": f"Unsupported file type: {ext or 'unknown'}"}), 400
 
             content = resp.read()
@@ -243,17 +244,17 @@ def update_meme_route(uuid):
         # Rename (new_name is just the stem, extension stays)
         new_name_stem = data.get("new_name")
         if new_name_stem is not None:
-            orig_stem, orig_ext = os.path.splitext(filename)
-            new_filename = sanitize_filename(new_name_stem + orig_ext)
-            new_name_stem = os.path.splitext(new_filename)[0]
+            orig = Path(filename)
+            new_filename = sanitize_filename(new_name_stem + orig.suffix)
+            new_stem = Path(new_filename).stem
 
-            if new_name_stem and new_name_stem != orig_stem:
-                new_path = os.path.join(MEMES_DIR, new_filename)
-                if os.path.exists(new_path):
+            if new_stem and new_stem != orig.stem:
+                new_path = MEMES_DIR / new_filename
+                if new_path.exists():
                     return jsonify({"error": "A file with that name already exists"}), 409
 
-                old_path = os.path.join(MEMES_DIR, filename)
-                os.rename(old_path, new_path)
+                old_path = MEMES_DIR / filename
+                old_path.rename(new_path)
                 update_filename(conn, uuid, new_filename)
                 log.info("Renamed: %s -> %s (%s)", filename, new_filename, uuid)
 
@@ -326,13 +327,13 @@ def bulk_auto():
 
             # Apply requested fields
             if "name" in fields and suggestion.get("name"):
-                orig_ext = os.path.splitext(filename)[1]
+                orig_ext = Path(filename).suffix
                 new_filename = sanitize_filename(suggestion["name"].strip() + orig_ext)
-                new_path = os.path.join(MEMES_DIR, new_filename)
-                if not os.path.exists(new_path) or new_filename == filename:
-                    old_path = os.path.join(MEMES_DIR, filename)
+                new_path = MEMES_DIR / new_filename
+                if not new_path.exists() or new_filename == filename:
+                    old_path = MEMES_DIR / filename
                     if new_filename != filename:
-                        os.rename(old_path, new_path)
+                        old_path.rename(new_path)
                     update_filename(conn, u, new_filename)
 
             if "description" in fields and suggestion.get("description"):
@@ -391,8 +392,8 @@ def delete_meme(uuid):
         filename = delete_meme_row(conn, uuid)
         if not filename:
             return jsonify({"error": "Not found"}), 404
-        path = os.path.join(MEMES_DIR, filename)
-        if os.path.exists(path):
-            os.remove(path)
+        path = MEMES_DIR / filename
+        if path.exists():
+            path.unlink()
     log.info("Deleted: %s (%s)", filename, uuid)
     return "", 204

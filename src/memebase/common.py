@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-CONFIG_DEFAULT = os.path.join(ROOT_DIR, "config.default.toml")
-CONFIG_PATH = os.path.join(DATA_DIR, "config.toml")
-DB_PATH = os.path.join(DATA_DIR, "memes.db")
-MEMES_DIR = os.path.join(DATA_DIR, "memes")
+ROOT_DIR = Path(__file__).parent.parent.parent
+DATA_DIR = ROOT_DIR / "data"
+CONFIG_DEFAULT = ROOT_DIR / "config.default.toml"
+CONFIG_PATH = DATA_DIR / "config.toml"
+DB_PATH = DATA_DIR / "memes.db"
+MEMES_DIR = DATA_DIR / "memes"
 
 
 DEBUG = os.getenv("MEMEBASE_DEBUG", "1") == "1"

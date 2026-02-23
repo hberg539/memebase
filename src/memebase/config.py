@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 from typing import Any
 
@@ -41,7 +40,7 @@ def load_config() -> dict[str, Any]:
     The returned dict is the user config deep-merged over built-in defaults,
     so every expected key is always present.
     """
-    if not os.path.exists(CONFIG_PATH):
+    if not CONFIG_PATH.exists():
         shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
         log.info("Copied default config to %s", CONFIG_PATH)
     with open(CONFIG_PATH, "rb") as f:
