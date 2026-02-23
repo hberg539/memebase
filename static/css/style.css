@@ -76,6 +76,19 @@ header select {
 	gap: 1rem;
 	padding: 0 1.5rem 4rem;
 }
+.grid.masonry {
+	display: block;
+	columns: var(--thumb-size);
+	column-gap: 1rem;
+}
+.grid.masonry .card {
+	break-inside: avoid;
+	margin-bottom: 1rem;
+}
+.grid.masonry .card img,
+.grid.masonry .card video {
+	aspect-ratio: auto;
+}
 .card {
 	cursor: pointer;
 	border-radius: 8px;

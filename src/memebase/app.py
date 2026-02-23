@@ -72,6 +72,7 @@ def index():
     return render_template(
         "index.html",
         version=VERSION,
+        grid_layout=cfg["grid"]["layout"],
         grid_thumbnail_size=cfg["grid"]["thumbnail_size"],
         grid_page_size=cfg["grid"]["page_size"],
         ai_parallel=cfg["ai"]["parallel"],

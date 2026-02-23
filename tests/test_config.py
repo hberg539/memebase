@@ -12,7 +12,7 @@ def test_empty_user_config():
 def test_full_user_config_overrides():
     """User supplies every key — all defaults replaced."""
     user = {
-        "grid": {"thumbnail_size": 300, "page_size": 80},
+        "grid": {"layout": "masonry", "thumbnail_size": 300, "page_size": 80},
         "ai": {"enabled": True, "parallel": 8},
     }
     result = _deep_merge(_DEFAULTS, user)
@@ -23,7 +23,8 @@ def test_old_config_missing_section():
     """User has [grid] only — [ai] defaults filled in."""
     user = {"grid": {"thumbnail_size": 150, "page_size": 25}}
     result = _deep_merge(_DEFAULTS, user)
-    assert result["grid"] == user["grid"]
+    assert result["grid"]["thumbnail_size"] == 150
+    assert result["grid"]["page_size"] == 25
     assert result["ai"] == _DEFAULTS["ai"]
 
 

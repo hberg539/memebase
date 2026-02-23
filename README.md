@@ -65,6 +65,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 
 | Key | Default | What it does |
 |-----|---------|--------------|
+| `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.page_size` | `50` | Memes per page |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off |
