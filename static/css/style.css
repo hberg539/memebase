@@ -169,8 +169,13 @@ header select {
 .card .name {
 	padding: 0.5rem 0.75rem;
 	font-size: 0.8rem;
-	word-break: break-all;
 	color: #aaa;
+	display: flex;
+	white-space: nowrap;
+}
+.card .name-base {
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 .card .card-tags {
 	padding: 0 0.75rem 0.5rem;
