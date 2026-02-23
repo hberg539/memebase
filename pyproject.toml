@@ -2,7 +2,7 @@
 name = "memebase"
 version = "0.3.0"
 description = "Web-based meme manager"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = ["flask>=3.0", "Pillow>=10.0", "litellm>=1.0"]
 
 [dependency-groups]
@@ -12,7 +12,7 @@ dev = [
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
