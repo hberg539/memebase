@@ -41,23 +41,29 @@ function canCopy(filename) {
 /* -- Clipboard & download -- */
 
 async function copyImage(src, feedbackEl) {
-	const res = await fetch(src);
-	const blob = await res.blob();
-	const img = new window.Image();
-	img.crossOrigin = "anonymous";
-	const url = URL.createObjectURL(blob);
-	await new Promise((resolve, reject) => {
-		img.onload = resolve;
-		img.onerror = reject;
-		img.src = url;
+	const item = new ClipboardItem({
+		"image/png": (async () => {
+			const res = await fetch(src);
+			const blob = await res.blob();
+			const img = new window.Image();
+			img.crossOrigin = "anonymous";
+			const url = URL.createObjectURL(blob);
+			await new Promise((resolve, reject) => {
+				img.onload = resolve;
+				img.onerror = reject;
+				img.src = url;
+			});
+			const c = document.createElement("canvas");
+			c.width = img.naturalWidth;
+			c.height = img.naturalHeight;
+			c.getContext("2d").drawImage(img, 0, 0);
+			URL.revokeObjectURL(url);
+			const pngBlob = await new Promise((r) => c.toBlob(r, "image/png"));
+			if (!pngBlob) throw new Error("Failed to convert image");
+			return pngBlob;
+		})(),
 	});
-	const c = document.createElement("canvas");
-	c.width = img.naturalWidth;
-	c.height = img.naturalHeight;
-	c.getContext("2d").drawImage(img, 0, 0);
-	URL.revokeObjectURL(url);
-	const pngBlob = await new Promise((r) => c.toBlob(r, "image/png"));
-	await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+	await navigator.clipboard.write([item]);
 	if (feedbackEl) {
 		const prev = feedbackEl.innerHTML;
 		feedbackEl.innerHTML = icon("check", 18);

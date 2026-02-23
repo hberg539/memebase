@@ -18,7 +18,7 @@ let totalMemes = 0;
 function buildCardHtml(m, isNew) {
 	const src = `/memes/${m.uuid}/${encodeURIComponent(m.filename)}`;
 	const media = isVideo(m.filename)
-		? `<video src="${src}" muted loop preload="metadata" onmouseenter="this.play()" onmouseleave="this.pause()"></video>`
+		? `<video src="${src}" muted loop preload="metadata"></video>`
 		: `<img src="${src}" alt="${esc(m.filename)}" loading="lazy">`;
 	const tags = m.tags.length
 		? `<div class="card-tags">${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`
@@ -144,6 +144,23 @@ function renderPagination() {
 }
 
 /* -- Event listeners -- */
+
+grid.addEventListener(
+	"mouseenter",
+	(e) => {
+		const vid = e.target.closest(".card video");
+		if (vid) vid.play().catch(() => {});
+	},
+	true,
+);
+grid.addEventListener(
+	"mouseleave",
+	(e) => {
+		const vid = e.target.closest(".card video");
+		if (vid) vid.pause();
+	},
+	true,
+);
 
 paginationEl.addEventListener("click", (e) => {
 	const btn = e.target.closest(".page-btn");

@@ -1,8 +1,13 @@
 const toastContainer = document.createElement("div");
 toastContainer.id = "toast-container";
-toastContainer.popover = "manual";
+const canPopover = typeof HTMLElement.prototype.showPopover === "function";
+if (canPopover) {
+	toastContainer.popover = "manual";
+}
 document.body.appendChild(toastContainer);
-toastContainer.showPopover();
+if (canPopover) {
+	toastContainer.showPopover();
+}
 
 const toastIcons = {
 	success: "CircleCheck",
@@ -25,8 +30,10 @@ function showAlert(message, type = "info") {
 	toast.addEventListener("click", () => dismissToast(toast));
 	toastContainer.prepend(toast);
 	// Re-promote to top of top layer so it's above any open dialog
-	toastContainer.hidePopover();
-	toastContainer.showPopover();
+	if (canPopover) {
+		toastContainer.hidePopover();
+		toastContainer.showPopover();
+	}
 	requestAnimationFrame(() => toast.classList.add("toast-visible"));
 
 	// Max 10 visible
