@@ -138,29 +138,28 @@ def get_all_tags(conn):
     return [r["tag"] for r in rows]
 
 
+def _normalize_tags(tags):
+    """Deduplicate and normalize a list of tags."""
+    return {t.strip().lower() for t in set(tags)} - {""}
+
+
 def set_tags(conn, uuid, tags):
     """Replace all tags for a meme."""
     conn.execute("DELETE FROM tags WHERE uuid = ?", (uuid,))
-    for tag in set(tags):
-        tag = tag.strip().lower()
-        if tag:
-            conn.execute("INSERT INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
+    for tag in _normalize_tags(tags):
+        conn.execute("INSERT INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
 def add_tags(conn, uuid, tags):
     """Add tags to a meme (ignores duplicates)."""
-    for tag in set(tags):
-        tag = tag.strip().lower()
-        if tag:
-            conn.execute("INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
+    for tag in _normalize_tags(tags):
+        conn.execute("INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
 def remove_tags(conn, uuid, tags):
     """Remove specific tags from a meme."""
-    for tag in set(tags):
-        tag = tag.strip().lower()
-        if tag:
-            conn.execute("DELETE FROM tags WHERE uuid = ? AND tag = ?", (uuid, tag))
+    for tag in _normalize_tags(tags):
+        conn.execute("DELETE FROM tags WHERE uuid = ? AND tag = ?", (uuid, tag))
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 import logging
 import os
-import uuid as uuid_mod
 
 from flask import (
     Flask,
@@ -20,10 +19,7 @@ from common import (
 from db import (
     get_db,
     get_meme,
-    get_meme_filename,
     get_meme_for_serving,
-    find_by_sha256,
-    insert_meme,
     update_favorite,
     update_description,
     update_filename,
@@ -35,15 +31,11 @@ from db import (
     delete_meme_row,
     query_memes,
 )
-from util import sanitize_filename, load_config, file_hash
+from service import resolve_unique_path, register_meme, get_meme_file_path
+from util import sanitize_filename, load_config, tomllib
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
 
 try:
     with open(os.path.join(ROOT_DIR, "pyproject.toml"), "rb") as _f:
@@ -149,35 +141,16 @@ def upload_memes():
                 continue
 
             basename = sanitize_filename(f.filename)
-            dest = os.path.join(MEMES_DIR, basename)
-
-            # Avoid collisions by appending a counter
-            if os.path.exists(dest):
-                stem, e = os.path.splitext(basename)
-                counter = 1
-                while os.path.exists(dest):
-                    dest = os.path.join(MEMES_DIR, f"{stem}_{counter}{e}")
-                    counter += 1
-                basename = os.path.basename(dest)
-
+            dest, basename = resolve_unique_path(MEMES_DIR, basename)
             f.save(dest)
-            h = file_hash(dest)
 
-            # Check for duplicate content
-            existing_uuid = find_by_sha256(conn, h)
-            if existing_uuid:
-                os.remove(dest)
-                d = get_meme(conn, existing_uuid)
-                d["duplicate"] = True
-                results.append(d)
-                log.info("Upload skipped (duplicate): %s -> %s", basename, existing_uuid)
-                continue
-
-            new_uuid = str(uuid_mod.uuid4())
-            file_size = os.path.getsize(dest)
-            insert_meme(conn, new_uuid, h, file_size, basename)
-            results.append(get_meme(conn, new_uuid))
-            log.info("Uploaded: %s (%s, %d bytes)", basename, new_uuid, file_size)
+            meme, is_dup = register_meme(conn, dest)
+            if is_dup:
+                meme["duplicate"] = True
+                log.info("Upload skipped (duplicate): %s -> %s", basename, meme["uuid"])
+            else:
+                log.info("Uploaded: %s (%s, %d bytes)", basename, meme["uuid"], meme["size"])
+            results.append(meme)
 
     return jsonify(results), 201
 
@@ -220,46 +193,27 @@ def upload_from_url():
         return jsonify({"error": f"Failed to download: {e}"}), 400
 
     basename = sanitize_filename(filename)
-    dest = os.path.join(MEMES_DIR, basename)
-
-    if os.path.exists(dest):
-        stem, e = os.path.splitext(basename)
-        counter = 1
-        while os.path.exists(dest):
-            dest = os.path.join(MEMES_DIR, f"{stem}_{counter}{e}")
-            counter += 1
-        basename = os.path.basename(dest)
+    dest, basename = resolve_unique_path(MEMES_DIR, basename)
 
     with open(dest, "wb") as f:
         f.write(content)
 
-    h = file_hash(dest)
-
     with get_db() as conn:
-        existing_uuid = find_by_sha256(conn, h)
-        if existing_uuid:
-            os.remove(dest)
-            log.info("URL upload skipped (duplicate): %s -> %s", url, existing_uuid)
-            return jsonify(get_meme(conn, existing_uuid)), 200
-
-        new_uuid = str(uuid_mod.uuid4())
-        file_size = os.path.getsize(dest)
-        insert_meme(conn, new_uuid, h, file_size, basename)
+        meme, is_dup = register_meme(conn, dest)
+        if is_dup:
+            log.info("URL upload skipped (duplicate): %s -> %s", url, meme["uuid"])
+            return jsonify(meme), 200
         log.info(
-            "Uploaded from URL: %s -> %s (%s, %d bytes)",
-            url,
-            basename,
-            new_uuid,
-            file_size,
+            "Uploaded from URL: %s -> %s (%s, %d bytes)", url, basename, meme["uuid"], meme["size"]
         )
-        return jsonify(get_meme(conn, new_uuid)), 201
+        return jsonify(meme), 201
 
 
 @app.route("/api/memes/<uuid>", methods=["PUT"])
 def update_meme_route(uuid):
     with get_db() as conn:
-        filename = get_meme_filename(conn, uuid)
-        if not filename:
+        filename, _, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
+        if reason == "not_in_db":
             return jsonify({"error": "Not found"}), 404
 
         data = request.get_json()
@@ -315,11 +269,10 @@ def auto_describe(uuid):
     from ai import analyze_meme
 
     with get_db() as conn:
-        filename = get_meme_filename(conn, uuid)
-        if not filename:
+        filename, path, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
+        if reason == "not_in_db":
             return jsonify({"error": "Not found"}), 404
-        path = os.path.join(MEMES_DIR, filename)
-        if not os.path.exists(path):
+        if reason == "not_on_disk":
             return jsonify({"error": "File not found on disk"}), 404
 
         tags = get_all_tags(conn)
@@ -350,11 +303,8 @@ def bulk_auto():
         all_tags = get_all_tags(conn)
         results = {}
         for u in uuids:
-            filename = get_meme_filename(conn, u)
-            if not filename:
-                continue
-            path = os.path.join(MEMES_DIR, filename)
-            if not os.path.exists(path):
+            filename, path, reason = get_meme_file_path(conn, u, MEMES_DIR)
+            if reason:
                 continue
 
             try:
