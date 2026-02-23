@@ -1,6 +1,9 @@
 import hashlib
+import io
 import re
 import unicodedata
+
+from PIL import Image, ImageDraw, ImageFont
 
 # Characters forbidden on Windows (and generally problematic)
 _RESERVED_CHARS = re.compile(r'[<>:"/\\|?*#%\x00-\x1f]')
@@ -59,3 +62,36 @@ def file_hash(path: str) -> str:
         for chunk in iter(lambda: f.read(8192), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+_placeholder_image_bytes: bytes | None = None
+
+
+def generate_placeholder_image() -> bytes:
+    """Generate a dark 400x300 PNG with '404' text. Cached after first call."""
+    global _placeholder_image_bytes
+    if _placeholder_image_bytes is not None:
+        return _placeholder_image_bytes
+
+    w, h = 400, 300
+    img = Image.new("RGB", (w, h), color=(30, 30, 30))
+    draw = ImageDraw.Draw(img)
+
+    try:
+        big = ImageFont.load_default(size=80)
+        small = ImageFont.load_default(size=20)
+    except TypeError:
+        big = small = ImageFont.load_default()
+
+    bbox = draw.textbbox((0, 0), "404", font=big)
+    draw.text(((w - bbox[2]) / 2, (h - bbox[3]) / 2 - 20), "404", fill=(120, 120, 120), font=big)
+
+    bbox = draw.textbbox((0, 0), "not found", font=small)
+    draw.text(
+        ((w - bbox[2]) / 2, (h + bbox[3]) / 2 + 30), "not found", fill=(90, 90, 90), font=small
+    )
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    _placeholder_image_bytes = buf.getvalue()
+    return _placeholder_image_bytes

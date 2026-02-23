@@ -3,12 +3,14 @@ from pathlib import Path
 
 from flask import (
     Flask,
+    Response,
     jsonify,
     make_response,
     render_template,
     request,
     send_from_directory,
 )
+from werkzeug.exceptions import NotFound
 
 from memebase.ai import analyze_meme
 from memebase.common import ALLOWED_EXTENSIONS, CACHE_MAX_AGE, MEMES_DIR, ROOT_DIR
@@ -37,7 +39,7 @@ from memebase.service import (
     resolve_unique_path,
 )
 from memebase.thumbnails import delete_thumbnails, get_or_create_thumbnail
-from memebase.util import sanitize_filename
+from memebase.util import generate_placeholder_image, sanitize_filename
 
 logging.basicConfig(
     level=logging.INFO,
@@ -87,17 +89,24 @@ def index():
     )
 
 
+def _not_found_image():
+    return Response(generate_placeholder_image(), status=404, content_type="image/png")
+
+
 @app.route("/memes/<uuid>/<path:filename>")
 def serve_meme(uuid, filename):
     with get_db() as conn:
         result = get_meme_for_serving(conn, uuid)
     if not result:
-        return "Not found", 404
+        return _not_found_image()
     real_filename, sha256 = result
     etag = f'"{sha256}"'
     if request.headers.get("If-None-Match") == etag:
         return "", 304
-    resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+    try:
+        resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+    except NotFound:
+        return _not_found_image()
     resp.headers["ETag"] = etag
     resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
     return resp
@@ -108,7 +117,7 @@ def serve_thumbnail(uuid, ext):
     with get_db() as conn:
         result = get_meme_for_serving(conn, uuid)
     if not result:
-        return "Not found", 404
+        return _not_found_image()
     real_filename, sha256 = result
 
     source_path = MEMES_DIR / real_filename
@@ -118,7 +127,10 @@ def serve_thumbnail(uuid, ext):
         etag = f'"{sha256}-thumb"'
         if request.headers.get("If-None-Match") == etag:
             return "", 304
-        resp = make_response(send_from_directory(thumb_path.parent, thumb_path.name))
+        try:
+            resp = make_response(send_from_directory(thumb_path.parent, thumb_path.name))
+        except NotFound:
+            return _not_found_image()
         resp.headers["ETag"] = etag
         resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
         return resp
@@ -127,7 +139,10 @@ def serve_thumbnail(uuid, ext):
     etag = f'"{sha256}"'
     if request.headers.get("If-None-Match") == etag:
         return "", 304
-    resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+    try:
+        resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+    except NotFound:
+        return _not_found_image()
     resp.headers["ETag"] = etag
     resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
     return resp
