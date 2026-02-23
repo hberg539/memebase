@@ -3,7 +3,7 @@
 A self-hosted, web-based home for your memes. Upload, tag, search, and hoard your collection - with optional AI that names and tags them for you.
 
 [![Tests](https://github.com/hberg539/memebase/actions/workflows/test.yml/badge.svg)](https://github.com/hberg539/memebase/actions/workflows/test.yml)
-[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org)
 [![Flask](https://img.shields.io/badge/flask-3.0+-green)](https://flask.palletsprojects.com)
 [![License](https://img.shields.io/badge/license-MIT-orange)](LICENSE)
 
