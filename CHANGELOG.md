@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.5.0](https://github.com/hberg539/memebase/compare/v0.4.1...v0.5.0) (2026-02-23)
+
+
+### Features
+
+* add on-demand thumbnail generation for grid view ([24034f2](https://github.com/hberg539/memebase/commit/24034f2d6aa19636638496a01502e15707504d00))
+* **db:** add ext column to memes table for cleaner extension queries ([38154ff](https://github.com/hberg539/memebase/commit/38154ff08da387d24c06a5b2aae39c6a342c600c))
+* make server host/port configurable via config.toml ([f532f86](https://github.com/hberg539/memebase/commit/f532f86284cf17b628016b336d6a204cabaece20))
+* return generated 404 placeholder image for missing memes/thumbnails ([91ea28e](https://github.com/hberg539/memebase/commit/91ea28e8551c34f7651bf7ee3b7063de399e7e92))
+* **ui:** add masonry layout option via grid.layout config ([5f733ac](https://github.com/hberg539/memebase/commit/5f733ac439e35b72f10e043b162e7dcfddb3ac7d))
+* **ui:** auto-calculate per_page from viewport size ([47287fc](https://github.com/hberg539/memebase/commit/47287fcff358b6471b9d6cfedbbb55064f186ea0))
+* **ui:** enable clear button only when filters or search are active ([929d7f7](https://github.com/hberg539/memebase/commit/929d7f7edb0d868d2205cd34ebe6edf766d3de7f))
+* **ui:** show title and tags only on card hover, bump default thumbnail size to 220 ([0462509](https://github.com/hberg539/memebase/commit/0462509e76d07f3ebd60349975d6b170cf820ac4))
+* **ui:** show warning toast for unsupported file types on upload ([15f6a6c](https://github.com/hberg539/memebase/commit/15f6a6c621215b9b0546026df255670f1e19431a))
+
+
+### Bug Fixes
+
+* scale thumbnails by short side to prevent pixelation on tall images ([28ce073](https://github.com/hberg539/memebase/commit/28ce073cc369f737e5b5faa05eee98b8112fc49a))
+* **ui:** await page load before scrolling to top on pagination ([65b932a](https://github.com/hberg539/memebase/commit/65b932a87f5ea06cdd8f4a1639eeb7ff82643761))
+* **ui:** scroll to top before loading on pagination ([75dc534](https://github.com/hberg539/memebase/commit/75dc534fea97ae45999b838e5e2d703210168afe))
+* **ui:** scroll to top before loading on pagination ([2e9d74a](https://github.com/hberg539/memebase/commit/2e9d74a8469bbb26bfad96451017d20ad1d59a9a))
+* **ui:** show active process count instead of completed in bulk auto-detect ([758447f](https://github.com/hberg539/memebase/commit/758447fac8091e22d2b5173da331abcb540debdc))
+
+
+### Refactoring
+
+* remove copy_count feature ([2b812e9](https://github.com/hberg539/memebase/commit/2b812e948c973a6ce505737d6ccda19bd651642a))
+
 ## [0.4.1](https://github.com/hberg539/memebase/compare/v0.4.0...v0.4.1) (2026-02-23)
 
 
