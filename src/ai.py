@@ -7,7 +7,7 @@ from typing import Any
 
 import litellm
 
-from util import load_config
+from config import load_config
 
 log = logging.getLogger(__name__)
 

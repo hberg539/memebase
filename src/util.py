@@ -1,17 +1,7 @@
 import hashlib
 import logging
-import os
 import re
-import shutil
 import unicodedata
-from typing import Any
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
-from common import CONFIG_DEFAULT, CONFIG_PATH
 
 log = logging.getLogger(__name__)
 
@@ -67,12 +57,3 @@ def file_hash(path: str) -> str:
         for chunk in iter(lambda: f.read(8192), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
-def load_config() -> dict[str, Any]:
-    """Load config.toml from the data directory, copying the default if missing."""
-    if not os.path.exists(CONFIG_PATH):
-        shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
-        log.info("Copied default config to %s", CONFIG_PATH)
-    with open(CONFIG_PATH, "rb") as f:
-        return tomllib.load(f)

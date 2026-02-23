@@ -32,7 +32,13 @@ from db import (
     query_memes,
 )
 from service import resolve_unique_path, register_meme, get_meme_file_path
-from util import sanitize_filename, load_config, tomllib
+from config import load_config
+from util import sanitize_filename
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -66,10 +72,10 @@ def index():
     return render_template(
         "index.html",
         version=VERSION,
-        grid_thumbnail_size=cfg.get("grid", {}).get("thumbnail_size", 200),
-        grid_page_size=cfg.get("grid", {}).get("page_size", 50),
-        ai_parallel=cfg.get("ai", {}).get("parallel", 3),
-        ai_enabled=cfg.get("ai", {}).get("enabled", True),
+        grid_thumbnail_size=cfg["grid"]["thumbnail_size"],
+        grid_page_size=cfg["grid"]["page_size"],
+        ai_parallel=cfg["ai"]["parallel"],
+        ai_enabled=cfg["ai"]["enabled"],
     )
 
 
@@ -92,7 +98,7 @@ def serve_meme(uuid, filename):
 @app.route("/api/memes")
 def list_memes():
     cfg = load_config()
-    page_size = cfg.get("grid", {}).get("page_size", 50)
+    page_size = cfg["grid"]["page_size"]
 
     q = request.args.get("q", "").strip()
     try:
