@@ -57,6 +57,9 @@ def init_db() -> None:
                 PRIMARY KEY (uuid, tag)
             )
         """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_memes_created_at ON memes(created_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_memes_favorite ON memes(favorite)")
 
 
 # ---------------------------------------------------------------------------
@@ -161,20 +164,32 @@ def get_all_tags(conn: sqlite3.Connection) -> list[str]:
 def set_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Replace all tags for a meme."""
     conn.execute("DELETE FROM tags WHERE uuid = ?", (uuid,))
-    for tag in normalize_tags(tags):
-        conn.execute("INSERT INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
+    normalized = normalize_tags(tags)
+    if normalized:
+        conn.executemany(
+            "INSERT INTO tags (uuid, tag) VALUES (?, ?)",
+            [(uuid, tag) for tag in normalized],
+        )
 
 
 def add_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Add tags to a meme (ignores duplicates)."""
-    for tag in normalize_tags(tags):
-        conn.execute("INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
+    normalized = normalize_tags(tags)
+    if normalized:
+        conn.executemany(
+            "INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)",
+            [(uuid, tag) for tag in normalized],
+        )
 
 
 def remove_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Remove specific tags from a meme."""
-    for tag in normalize_tags(tags):
-        conn.execute("DELETE FROM tags WHERE uuid = ? AND tag = ?", (uuid, tag))
+    normalized = normalize_tags(tags)
+    if normalized:
+        conn.executemany(
+            "DELETE FROM tags WHERE uuid = ? AND tag = ?",
+            [(uuid, tag) for tag in normalized],
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -333,13 +348,33 @@ def query_memes(
 
     filters = _get_facet_counts(conn, clauses)
 
-    # Fetch one page of memes
+    # Fetch one page of memes with all columns
     offset = (page - 1) * page_size
     rows = conn.execute(
-        f"SELECT m.uuid FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
+        f"SELECT m.uuid, m.sha256, m.size, m.filename, m.description, "
+        f"m.copy_count, m.favorite, m.created_at "
+        f"FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
         [*all_params, page_size, offset],
     ).fetchall()
 
-    memes = [get_meme(conn, row["uuid"]) for row in rows]
+    if not rows:
+        return {"memes": [], "total": total, "filters": filters}
+
+    # Batch-fetch tags for all memes in a single query
+    uuids = [row["uuid"] for row in rows]
+    placeholders = ",".join("?" * len(uuids))
+    tag_rows = conn.execute(
+        f"SELECT uuid, tag FROM tags WHERE uuid IN ({placeholders}) ORDER BY tag",
+        uuids,
+    ).fetchall()
+
+    tags_by_uuid: dict[str, list[str]] = {u: [] for u in uuids}
+    for tr in tag_rows:
+        tags_by_uuid[tr["uuid"]].append(tr["tag"])
+
+    memes: list[Meme] = []
+    for row in rows:
+        meme: Meme = {**dict(row), "tags": tags_by_uuid[row["uuid"]]}
+        memes.append(meme)
 
     return {"memes": memes, "total": total, "filters": filters}
