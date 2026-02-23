@@ -44,7 +44,7 @@ function getPerPage() {
 
 function buildCardHtml(m, isNew) {
 	const src = `/memes/${m.uuid}/${encodeURIComponent(m.filename)}`;
-	const ext = m.filename.slice(m.filename.lastIndexOf(".") + 1).toLowerCase();
+	const ext = m.ext;
 	const thumbEnabled = window.THUMBNAILS_ENABLED;
 	const skipTypes = window.THUMBNAILS_SKIP_TYPES || [];
 	const useThumb = thumbEnabled && !skipTypes.includes(ext);

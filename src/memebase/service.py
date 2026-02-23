@@ -44,7 +44,8 @@ def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool
     new_uuid = str(uuid_mod.uuid4())
     file_size = file_path.stat().st_size
     basename = file_path.name
-    insert_meme(conn, new_uuid, h, file_size, basename)
+    ext = Path(basename).suffix.lstrip(".").lower()
+    insert_meme(conn, new_uuid, h, file_size, basename, ext)
     return get_meme(conn, new_uuid), False
 
 
@@ -121,7 +122,8 @@ def apply_ai_suggestions(
         new_path = memes_dir / new_filename
         if new_filename != filename and not new_path.exists():
             (memes_dir / filename).rename(new_path)
-            update_filename(conn, uuid, new_filename)
+            ext = Path(new_filename).suffix.lstrip(".").lower()
+            update_filename(conn, uuid, new_filename, ext)
 
     if "description" in fields and suggestion.get("description"):
         update_description(conn, uuid, suggestion["description"])

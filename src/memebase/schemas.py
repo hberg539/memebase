@@ -52,6 +52,7 @@ class Meme(TypedDict):
     sha256: str
     size: int
     filename: str
+    ext: str
     description: str
     favorite: int
     created_at: str

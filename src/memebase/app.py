@@ -276,7 +276,8 @@ def update_meme_route(uuid):
 
                 old_path = MEMES_DIR / filename
                 old_path.rename(new_path)
-                update_filename(conn, uuid, new_filename)
+                ext = Path(new_filename).suffix.lstrip(".").lower()
+                update_filename(conn, uuid, new_filename, ext)
                 log.info("rename: uuid=%s old=%s new=%s", uuid, filename, new_filename)
 
         # Update tags

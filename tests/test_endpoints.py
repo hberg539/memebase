@@ -1,3 +1,4 @@
+import unittest.mock
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +13,7 @@ FAKE_MEME = {
     "sha256": "abc123",
     "size": 100,
     "filename": "test.png",
+    "ext": "png",
     "description": "",
     "favorite": 0,
     "created_at": "2024-01-01 00:00:00",
@@ -210,7 +212,9 @@ class TestUpdateMeme:
         ):
             resp = client.put("/api/memes/test-uuid-1234", json={"new_name": "new_name"})
         assert resp.status_code == 200
-        mock_rename.assert_called_once()
+        mock_rename.assert_called_once_with(
+            unittest.mock.ANY, "test-uuid-1234", "new_name.png", "png"
+        )
         assert not old_file.exists()
         assert (tmp_path / "new_name.png").exists()
 

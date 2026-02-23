@@ -34,6 +34,7 @@ class TestRegisterMeme:
                 sha256 TEXT UNIQUE NOT NULL,
                 size INTEGER NOT NULL DEFAULT 0,
                 filename TEXT NOT NULL,
+                ext TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 favorite INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),

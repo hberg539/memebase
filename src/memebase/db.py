@@ -44,6 +44,7 @@ def init_db() -> None:
                 sha256      TEXT UNIQUE NOT NULL,
                 size        INTEGER NOT NULL DEFAULT 0,
                 filename    TEXT NOT NULL,
+                ext         TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 favorite    INTEGER NOT NULL DEFAULT 0,
                 created_at  TEXT NOT NULL DEFAULT (datetime('now')),
@@ -58,6 +59,7 @@ def init_db() -> None:
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_memes_ext ON memes(ext)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_memes_created_at ON memes(created_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_memes_favorite ON memes(favorite)")
 
@@ -70,7 +72,7 @@ def init_db() -> None:
 def get_meme(conn: sqlite3.Connection, uuid: str) -> Meme | None:
     """Get a meme dict with tags by uuid, or None if not found."""
     row = conn.execute(
-        "SELECT uuid, sha256, size, filename, description, favorite, created_at "
+        "SELECT uuid, sha256, size, filename, ext, description, favorite, created_at "
         "FROM memes WHERE uuid = ?",
         (uuid,),
     ).fetchone()
@@ -100,11 +102,13 @@ def find_by_sha256(conn: sqlite3.Connection, sha256: str) -> str | None:
     return row["uuid"] if row else None
 
 
-def insert_meme(conn: sqlite3.Connection, uuid: str, sha256: str, size: int, filename: str) -> None:
+def insert_meme(
+    conn: sqlite3.Connection, uuid: str, sha256: str, size: int, filename: str, ext: str
+) -> None:
     """Insert a new meme row."""
     conn.execute(
-        "INSERT INTO memes (uuid, sha256, size, filename) VALUES (?, ?, ?, ?)",
-        (uuid, sha256, size, filename),
+        "INSERT INTO memes (uuid, sha256, size, filename, ext) VALUES (?, ?, ?, ?, ?)",
+        (uuid, sha256, size, filename, ext),
     )
 
 
@@ -124,11 +128,11 @@ def update_description(conn: sqlite3.Connection, uuid: str, description: str) ->
     )
 
 
-def update_filename(conn: sqlite3.Connection, uuid: str, filename: str) -> None:
-    """Update the stored filename."""
+def update_filename(conn: sqlite3.Connection, uuid: str, filename: str, ext: str) -> None:
+    """Update the stored filename and extension."""
     conn.execute(
-        "UPDATE memes SET filename = ?, updated_at = datetime('now') WHERE uuid = ?",
-        (filename, uuid),
+        "UPDATE memes SET filename = ?, ext = ?, updated_at = datetime('now') WHERE uuid = ?",
+        (filename, ext, uuid),
     )
 
 
@@ -214,8 +218,8 @@ def _build_filter_clauses(
             )
             search_params.extend([like, like, like])
 
-    ext_parts = ["LOWER(m.filename) LIKE ?"] if ext_filter else []
-    ext_params = [f"%.{ext_filter}"] if ext_filter else []
+    ext_parts = ["m.ext = ?"] if ext_filter else []
+    ext_params = [ext_filter] if ext_filter else []
 
     tag_parts: list[str] = []
     tag_params: list[str] = []
@@ -250,10 +254,9 @@ def _get_facet_counts(
     base_where = _build_where(search_parts)
 
     all_exts_rows = conn.execute(
-        f"""SELECT REPLACE(LOWER(SUBSTR(m.filename, INSTR(m.filename, '.'))), '.', '') as ext,
-                   COUNT(*) as c
+        f"""SELECT m.ext, COUNT(*) as c
             FROM memes m{base_where}
-            GROUP BY ext ORDER BY ext""",
+            GROUP BY m.ext ORDER BY m.ext""",
         search_params,
     ).fetchall()
     all_exts = {r["ext"]: r["c"] for r in all_exts_rows if r["ext"]}
@@ -273,10 +276,9 @@ def _get_facet_counts(
     ext_facet_params = search_params + tag_params
     ext_facet_where = _build_where(ext_facet_parts)
     ext_rows = conn.execute(
-        f"""SELECT REPLACE(LOWER(SUBSTR(m.filename, INSTR(m.filename, '.'))), '.', '') as ext,
-                   COUNT(*) as c
+        f"""SELECT m.ext, COUNT(*) as c
             FROM memes m{ext_facet_where}
-            GROUP BY ext""",
+            GROUP BY m.ext""",
         ext_facet_params,
     ).fetchall()
     ext_counts = {r["ext"]: r["c"] for r in ext_rows if r["ext"]}
@@ -342,7 +344,7 @@ def query_memes(
     # Fetch one page of memes with all columns
     offset = (page - 1) * page_size
     rows = conn.execute(
-        f"SELECT m.uuid, m.sha256, m.size, m.filename, m.description, "
+        f"SELECT m.uuid, m.sha256, m.size, m.filename, m.ext, m.description, "
         f"m.favorite, m.created_at "
         f"FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
         [*all_params, page_size, offset],

@@ -62,6 +62,7 @@ def load_config() -> AppConfig:
     if _cached is not None:
         return _cached
     if not CONFIG_PATH.exists():
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
         log.info("default config created: path=%s", CONFIG_PATH)
     with open(CONFIG_PATH, "rb") as f:
