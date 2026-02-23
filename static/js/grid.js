@@ -155,16 +155,21 @@ paginationEl.addEventListener("click", (e) => {
 });
 
 let timer;
+const triggerSearch = () => {
+	clearTimeout(timer);
+	activeExtFilter = null;
+	activeTagFilters.clear();
+	activeFavFilter = false;
+	currentPage = 1;
+	prevUuids = new Set();
+	load(search.value);
+};
 search.addEventListener("input", () => {
 	clearTimeout(timer);
-	timer = setTimeout(() => {
-		activeExtFilter = null;
-		activeTagFilters.clear();
-		activeFavFilter = false;
-		currentPage = 1;
-		prevUuids = new Set();
-		load(search.value);
-	}, 300);
+	timer = setTimeout(triggerSearch, 300);
+});
+search.addEventListener("keydown", (e) => {
+	if (e.key === "Enter") triggerSearch();
 });
 sortSel.addEventListener("change", () => {
 	currentPage = 1;
