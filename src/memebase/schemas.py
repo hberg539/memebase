@@ -20,8 +20,17 @@ class AiConfig(TypedDict):
     prompt: str
 
 
+class ThumbnailsConfig(TypedDict):
+    enabled: bool
+    max_size: int
+    quality: int
+    format: str
+    skip_types: list[str]
+
+
 class AppConfig(TypedDict):
     grid: GridConfig
+    thumbnails: ThumbnailsConfig
     ai: AiConfig
 
 

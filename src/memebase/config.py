@@ -18,6 +18,13 @@ _DEFAULTS: dict[str, Any] = {
         "thumbnail_size": 220,
         "per_page": "auto",
     },
+    "thumbnails": {
+        "enabled": False,
+        "max_size": 440,
+        "quality": 80,
+        "format": "webp",
+        "skip_types": ["gif"],
+    },
     "ai": {
         "enabled": False,
         "parallel": 3,

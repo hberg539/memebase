@@ -10,9 +10,16 @@ def test_empty_user_config():
 
 
 def test_full_user_config_overrides():
-    """User supplies every key — all defaults replaced."""
+    """User supplies every key -- all defaults replaced."""
     user = {
         "grid": {"layout": "masonry", "thumbnail_size": 300, "per_page": 80},
+        "thumbnails": {
+            "enabled": True,
+            "max_size": 200,
+            "quality": 90,
+            "format": "jpeg",
+            "skip_types": ["gif"],
+        },
         "ai": {"enabled": True, "parallel": 8},
     }
     result = _deep_merge(_DEFAULTS, user)

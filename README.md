@@ -68,10 +68,28 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
+| `thumbnails.enabled` | `false` | Generate and serve smaller thumbnails in the grid view |
+| `thumbnails.max_size` | `440` | Max width/height in pixels (2x card size for retina) |
+| `thumbnails.quality` | `80` | Output quality (1-100) |
+| `thumbnails.format` | `"webp"` | Thumbnail format: `"webp"` or `"jpeg"` |
+| `thumbnails.skip_types` | `["gif"]` | File extensions to skip, e.g. `["gif", "mp4"]` |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
+
+## Thumbnails
+
+Disabled by default. When enabled, the grid view serves small pre-generated thumbnails instead of full-resolution files - way faster page loads and less memory usage. Clicking a meme still shows the full-size original.
+
+Set `thumbnails.enabled = true` in `./data/config.toml` and you're good to go. Thumbnails are generated on first view and cached to `data/thumbnails/`.
+
+**Video thumbnails** require [ffmpeg](https://ffmpeg.org/) installed on the host (included in the Docker image). If ffmpeg isn't available, videos just serve at full resolution.
+
+**Skip types**: Use `thumbnails.skip_types` to keep certain formats as-is in the grid. For example:
+- `["gif"]` - keep GIFs animated instead of showing a static first frame (this is the default)
+- `["mp4", "webm"]` - skip video thumbnails entirely
+- `["gif", "mp4", "webm"]` - only thumbnail static images
 
 ## AI
 
@@ -125,6 +143,7 @@ data/
   memes.db       # SQLite database
   config.toml    # Your configuration
   memes/         # Uploaded meme files
+  thumbnails/    # Generated thumbnails (if enabled)
 ```
 
 ## Hotkeys

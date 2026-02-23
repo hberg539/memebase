@@ -42,9 +42,19 @@ function getPerPage() {
 
 function buildCardHtml(m, isNew) {
 	const src = `/memes/${m.uuid}/${encodeURIComponent(m.filename)}`;
-	const media = isVideo(m.filename)
-		? `<video src="${src}" muted loop preload="metadata"></video>`
-		: `<img src="${src}" alt="${esc(m.filename)}" loading="lazy">`;
+	const ext = m.filename.slice(m.filename.lastIndexOf(".") + 1).toLowerCase();
+	const thumbEnabled = window.THUMBNAILS_ENABLED;
+	const skipTypes = window.THUMBNAILS_SKIP_TYPES || [];
+	const useThumb = thumbEnabled && !skipTypes.includes(ext);
+	let media;
+	if (useThumb) {
+		const thumbExt = window.THUMBNAILS_FORMAT === "jpeg" ? "jpg" : "webp";
+		media = `<img src="/thumbnails/${m.uuid}.${thumbExt}" alt="${esc(m.filename)}" loading="lazy">`;
+	} else if (isVideo(m.filename)) {
+		media = `<video src="${src}" muted loop preload="metadata"></video>`;
+	} else {
+		media = `<img src="${src}" alt="${esc(m.filename)}" loading="lazy">`;
+	}
 	const tags = m.tags.length
 		? `<div class="card-tags">${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`
 		: "";

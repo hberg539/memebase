@@ -3,6 +3,13 @@ layout = "grid"  # "grid" or "masonry"
 thumbnail_size = 220  # card width in pixels
 per_page = "auto"  # number or "auto" to fill viewport
 
+[thumbnails]
+enabled = false       # generate and serve thumbnails in the grid
+max_size = 440        # max width/height in px (2x default card size for retina)
+quality = 80          # output quality (1-100)
+format = "webp"       # "webp" or "jpeg"
+skip_types = ["gif"]  # file extensions to skip, e.g. ["gif", "mp4"]
+
 [ai]
 enabled = false
 # Any litellm-compatible model string works here. Examples:
@@ -19,6 +26,6 @@ Respond with JSON only, no markdown:
 {"name": "...", "description": "...", "tags": ["...", "..."]}
 
 - name: a short, funny, descriptive filename (no extension, lowercase, use underscores)
-- description: describe the meme so it's searchable — include key visual elements, text on the image, the meme template name if recognizable, and the joke/context. Be slightly witty but prioritize findability over humor.
+- description: describe the meme so it's searchable -- include key visual elements, text on the image, the meme template name if recognizable, and the joke/context. Be slightly witty but prioritize findability over humor.
 - tags: up to 5 short, lowercase tags for categorization and search. Prefer reusing existing tags from this list when they fit: {tags}. Only invent new tags when none of the existing ones apply.
 """

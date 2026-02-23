@@ -3,7 +3,7 @@ from typing import Any
 
 from flask import Flask, g
 
-from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS
+from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS, THUMBNAILS_DIR
 from memebase.schemas import Meme
 from memebase.util import normalize_tags
 
@@ -36,6 +36,7 @@ def init_app(app: Flask) -> None:
 
 def init_db() -> None:
     MEMES_DIR.mkdir(parents=True, exist_ok=True)
+    THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
     with _connect_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS memes (

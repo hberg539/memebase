@@ -37,6 +37,7 @@ from memebase.service import (
     register_meme,
     resolve_unique_path,
 )
+from memebase.thumbnails import delete_thumbnails, get_or_create_thumbnail
 from memebase.util import sanitize_filename
 
 logging.basicConfig(
@@ -77,6 +78,9 @@ def index():
         grid_per_page=cfg["grid"]["per_page"],
         ai_parallel=cfg["ai"]["parallel"],
         ai_enabled=cfg["ai"]["enabled"],
+        thumbnails_enabled=cfg["thumbnails"]["enabled"],
+        thumbnails_skip_types=cfg["thumbnails"]["skip_types"],
+        thumbnails_format=cfg["thumbnails"]["format"],
     )
 
 
@@ -87,6 +91,36 @@ def serve_meme(uuid, filename):
     if not result:
         return "Not found", 404
     real_filename, sha256 = result
+    etag = f'"{sha256}"'
+    if request.headers.get("If-None-Match") == etag:
+        return "", 304
+    resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+    resp.headers["ETag"] = etag
+    resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
+    return resp
+
+
+@app.route("/thumbnails/<uuid>.<ext>")
+def serve_thumbnail(uuid, ext):
+    with get_db() as conn:
+        result = get_meme_for_serving(conn, uuid)
+    if not result:
+        return "Not found", 404
+    real_filename, sha256 = result
+
+    source_path = MEMES_DIR / real_filename
+    thumb_path = get_or_create_thumbnail(uuid, source_path)
+
+    if thumb_path and thumb_path.exists():
+        etag = f'"{sha256}-thumb"'
+        if request.headers.get("If-None-Match") == etag:
+            return "", 304
+        resp = make_response(send_from_directory(thumb_path.parent, thumb_path.name))
+        resp.headers["ETag"] = etag
+        resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
+        return resp
+
+    # Fallback: serve original file
     etag = f'"{sha256}"'
     if request.headers.get("If-None-Match") == etag:
         return "", 304
@@ -369,5 +403,6 @@ def delete_meme(uuid):
         path = MEMES_DIR / filename
         if path.exists():
             path.unlink()
+        delete_thumbnails(uuid)
     log.info("delete: uuid=%s filename=%s", uuid, filename)
     return "", 204
