@@ -12,6 +12,7 @@ def test_empty_user_config():
 def test_full_user_config_overrides():
     """User supplies every key -- all defaults replaced."""
     user = {
+        "server": {"host": "127.0.0.1", "port": 8080},
         "grid": {"layout": "masonry", "thumbnail_size": 300, "per_page": 80},
         "thumbnails": {
             "enabled": True,

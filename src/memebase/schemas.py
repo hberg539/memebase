@@ -28,7 +28,13 @@ class ThumbnailsConfig(TypedDict):
     skip_types: list[str]
 
 
+class ServerConfig(TypedDict):
+    host: str
+    port: int
+
+
 class AppConfig(TypedDict):
+    server: ServerConfig
     grid: GridConfig
     thumbnails: ThumbnailsConfig
     ai: AiConfig

@@ -13,6 +13,10 @@ from memebase.schemas import AppConfig
 log = logging.getLogger(__name__)
 
 _DEFAULTS: dict[str, Any] = {
+    "server": {
+        "host": "0.0.0.0",
+        "port": 5000,
+    },
     "grid": {
         "layout": "grid",
         "thumbnail_size": 220,
