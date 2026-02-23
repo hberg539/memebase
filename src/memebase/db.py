@@ -131,21 +131,20 @@ def update_filename(conn: sqlite3.Connection, uuid: str, filename: str) -> None:
 
 def increment_copy_count(conn: sqlite3.Connection, uuid: str) -> int | None:
     """Increment copy_count and return the new value, or None if not found."""
-    row = conn.execute("SELECT uuid FROM memes WHERE uuid = ?", (uuid,)).fetchone()
-    if not row:
-        return None
-    conn.execute("UPDATE memes SET copy_count = copy_count + 1 WHERE uuid = ?", (uuid,))
-    updated = conn.execute("SELECT copy_count FROM memes WHERE uuid = ?", (uuid,)).fetchone()
-    return updated["copy_count"]
+    row = conn.execute(
+        "UPDATE memes SET copy_count = copy_count + 1 WHERE uuid = ? RETURNING copy_count",
+        (uuid,),
+    ).fetchone()
+    return row["copy_count"] if row else None
 
 
 def delete_meme_row(conn: sqlite3.Connection, uuid: str) -> str | None:
     """Delete a meme row, returning the filename (for file cleanup), or None if not found."""
-    row = conn.execute("SELECT filename FROM memes WHERE uuid = ?", (uuid,)).fetchone()
-    if not row:
-        return None
-    conn.execute("DELETE FROM memes WHERE uuid = ?", (uuid,))
-    return row["filename"]
+    row = conn.execute(
+        "DELETE FROM memes WHERE uuid = ? RETURNING filename",
+        (uuid,),
+    ).fetchone()
+    return row["filename"] if row else None
 
 
 # ---------------------------------------------------------------------------
