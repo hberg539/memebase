@@ -33,9 +33,12 @@ dropZone.addEventListener("dragleave", (e) => {
 dropZone.addEventListener("drop", (e) => {
 	e.preventDefault();
 	dropZone.classList.remove("drag-over");
-	const files = [...e.dataTransfer.files].filter(
-		(f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
-	);
+	const all = [...e.dataTransfer.files];
+	const files = all.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
+	if (files.length < all.length) {
+		const skipped = all.length - files.length;
+		showAlert(`${skipped} unsupported file${skipped > 1 ? "s" : ""} skipped`, "warning");
+	}
 	if (files.length) uploadFiles(files);
 });
 
@@ -93,7 +96,8 @@ urlDownload.addEventListener("click", async () => {
 		updateSelectBar();
 		showAlert(`Downloaded ${meme.filename}`, "success");
 	} catch (e) {
-		showAlert(e.message, "error");
+		const isUnsupported = e.message?.includes("Unsupported file type");
+		showAlert(e.message, isUnsupported ? "warning" : "error");
 	} finally {
 		urlDownload.disabled = false;
 		urlDownload.textContent = "Download";
@@ -122,9 +126,12 @@ document.addEventListener("drop", (e) => {
 	dropZone.classList.remove("drag-over");
 	if (e.target.closest("#drop-zone")) return; // let drop-zone handler handle it
 	e.preventDefault();
-	const files = [...e.dataTransfer.files].filter(
-		(f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
-	);
+	const all = [...e.dataTransfer.files];
+	const files = all.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
+	if (files.length < all.length) {
+		const skipped = all.length - files.length;
+		showAlert(`${skipped} unsupported file${skipped > 1 ? "s" : ""} skipped`, "warning");
+	}
 	if (files.length) uploadFiles(files);
 });
 
