@@ -6,6 +6,8 @@ const sortSel = document.getElementById("sort");
 const filtersEl = document.getElementById("filters");
 const paginationEl = document.getElementById("pagination");
 
+const clearBtn = document.getElementById("clear-all");
+
 let allMemes = [];
 let activeExtFilter = null;
 const activeTagFilters = new Set();
@@ -75,6 +77,13 @@ function buildCardHtml(m, isNew) {
     </div>`;
 }
 
+/* -- Clear button state -- */
+
+function updateClearBtn() {
+	const active = search.value || activeExtFilter || activeTagFilters.size || activeFavFilter;
+	clearBtn.disabled = !active;
+}
+
 /* -- Data loading -- */
 
 async function load(q = "") {
@@ -93,6 +102,7 @@ async function load(q = "") {
 	renderGrid();
 	renderPagination();
 	refreshIcons();
+	updateClearBtn();
 }
 
 /* -- Filters -- */
@@ -244,7 +254,7 @@ function resetView() {
 	load();
 }
 
-document.getElementById("clear-all").addEventListener("click", resetView);
+clearBtn.addEventListener("click", resetView);
 document.getElementById("logo").addEventListener("click", resetView);
 
 filtersEl.addEventListener("click", (e) => {
