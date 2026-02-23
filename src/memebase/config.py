@@ -7,7 +7,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from memebase.common import CONFIG_DEFAULT, CONFIG_PATH
+from memebase.common import CONFIG_DEFAULT, CONFIG_PATH, ROOT_DIR
 from memebase.schemas import AppConfig
 
 log = logging.getLogger(__name__)
@@ -55,3 +55,12 @@ def load_config() -> AppConfig:
         user_cfg = tomllib.load(f)
     _cached = _deep_merge(_DEFAULTS, user_cfg)
     return _cached
+
+
+def load_version() -> str:
+    """Read the project version from pyproject.toml."""
+    try:
+        with open(ROOT_DIR / "pyproject.toml", "rb") as f:
+            return tomllib.load(f)["project"]["version"]
+    except Exception:
+        return ""

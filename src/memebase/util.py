@@ -52,7 +52,7 @@ def sanitize_filename(name: str) -> str:
 
 def normalize_tags(tags: list[str]) -> set[str]:
     """Deduplicate and normalize a list of tags."""
-    return {t.strip().lower() for t in set(tags)} - {""}
+    return {t.strip().lower() for t in tags} - {""}
 
 
 def file_hash(path: str) -> str:

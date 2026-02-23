@@ -11,8 +11,8 @@ from flask import (
 )
 
 from memebase.ai import analyze_meme
-from memebase.common import ALLOWED_EXTENSIONS, MEMES_DIR, ROOT_DIR
-from memebase.config import load_config
+from memebase.common import ALLOWED_EXTENSIONS, CACHE_MAX_AGE, MEMES_DIR, ROOT_DIR
+from memebase.config import load_config, load_version
 from memebase.db import (
     add_tags,
     delete_meme_row,
@@ -39,19 +39,10 @@ from memebase.service import (
 )
 from memebase.util import sanitize_filename
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-try:
-    with open(ROOT_DIR / "pyproject.toml", "rb") as _f:
-        VERSION = tomllib.load(_f)["project"]["version"]
-except Exception:
-    VERSION = ""
+VERSION = load_version()
 
 app = Flask(
     __name__,
@@ -96,7 +87,7 @@ def serve_meme(uuid, filename):
         return "", 304
     resp = make_response(send_from_directory(MEMES_DIR, real_filename))
     resp.headers["ETag"] = etag
-    resp.headers["Cache-Control"] = "max-age=31536000"
+    resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
     return resp
 
 
