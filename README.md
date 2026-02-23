@@ -131,6 +131,8 @@ When AI is enabled, an **Auto** button appears in two places:
 - **Meme popup** - click Auto to detect the name, description, and tags for a single meme.
 - **Bulk selection** - select multiple memes, then click Auto to run AI detection across all of them.
 
+Memes that fail during bulk auto-detect are automatically tagged with `auto-failed`, so you can filter for them later and review by hand.
+
 ### Supported models
 
 Memebase uses [LiteLLM](https://docs.litellm.ai/) for model routing, so pretty much any vision model works:

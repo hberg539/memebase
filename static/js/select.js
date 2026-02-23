@@ -152,18 +152,20 @@ selAutoBtn.addEventListener("click", () => {
 		async function processOne(u) {
 			done++;
 			autoTitle.textContent = `Processing ${done}/${total}...`;
+			const label =
+				document.querySelector(`.card[data-uuid="${u}"]`)?.dataset.filename || u.slice(0, 8);
 			try {
 				let suggestion;
 				try {
 					suggestion = await Api.autoDetect(u);
 				} catch (e) {
 					failed.push(u);
-					showAlert("Detection failed for meme", "error");
+					showAlert(`Detection failed for ${label}`, "error");
 					return;
 				}
 				if (suggestion.error) {
 					failed.push(u);
-					showAlert(`Detection failed: ${suggestion.error}`, "error");
+					showAlert(`Detection failed for ${label}: ${suggestion.error}`, "error");
 					return;
 				}
 				const body = {};
