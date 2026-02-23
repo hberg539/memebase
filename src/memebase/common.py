@@ -25,7 +25,7 @@ CONTENT_TYPE_TO_EXT = {
     "video/mp4": ".mp4",
 }
 
-CACHE_MAX_AGE = 31536000
+CACHE_MAX_AGE = 604800
 
 SORT_OPTIONS = {
     "name": "m.filename",

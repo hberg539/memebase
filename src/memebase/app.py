@@ -53,6 +53,9 @@ app = Flask(
     template_folder=str(ROOT_DIR / "templates"),
     static_folder=str(ROOT_DIR / "static"),
 )
+_server_cfg = load_config()["server"]
+if _server_cfg["max_upload_size"]:
+    app.config["MAX_CONTENT_LENGTH"] = _server_cfg["max_upload_size"] * 1024 * 1024
 init_app(app)
 
 
@@ -60,8 +63,9 @@ init_app(app)
 def handle_exception(e):
     """Return JSON for any uncaught exception on API routes."""
     if request.path.startswith("/api/"):
-        log.exception("unhandled error: method=%s path=%s", request.method, request.path)
         status = getattr(e, "code", 500)
+        if status >= 500:
+            log.exception("unhandled error: method=%s path=%s", request.method, request.path)
         return jsonify({"error": str(e) or "Internal server error"}), status
     raise e
 

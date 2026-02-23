@@ -67,6 +67,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 |-----|---------|--------------|
 | `server.host` | `"0.0.0.0"` | Address the server listens on |
 | `server.port` | `5000` | Port the server listens on |
+| `server.max_upload_size` | `100` | Max upload size in MB (0 = unlimited) |
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |

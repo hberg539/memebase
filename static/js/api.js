@@ -14,6 +14,14 @@ const Api = (() => {
 
 		async uploadFiles(formData) {
 			const res = await fetch("/api/memes", { method: "POST", body: formData });
+			if (!res.ok) {
+				let msg = "Upload failed";
+				try {
+					const e = await res.json();
+					msg = e.error || msg;
+				} catch {}
+				throw new Error(msg);
+			}
 			return res.json();
 		},
 

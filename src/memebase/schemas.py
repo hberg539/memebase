@@ -31,6 +31,7 @@ class ThumbnailsConfig(TypedDict):
 class ServerConfig(TypedDict):
     host: str
     port: int
+    max_upload_size: int
 
 
 class AppConfig(TypedDict):

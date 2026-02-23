@@ -16,6 +16,7 @@ _DEFAULTS: dict[str, Any] = {
     "server": {
         "host": "0.0.0.0",
         "port": 5000,
+        "max_upload_size": 100,
     },
     "grid": {
         "layout": "grid",
