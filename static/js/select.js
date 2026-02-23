@@ -62,7 +62,13 @@ document.getElementById("sel-all").addEventListener("click", () => {
 document.getElementById("sel-clear").addEventListener("click", clearSelection);
 
 document.addEventListener("keydown", (e) => {
-	if (e.key === "Escape" && selectedUuids.size && !modal.open) {
+	if (
+		e.key === "Escape" &&
+		selectedUuids.size &&
+		!modal.open &&
+		!bulkModal.open &&
+		!document.getElementById("auto-modal").open
+	) {
 		clearSelection();
 	}
 });
@@ -121,6 +127,12 @@ document.getElementById("sel-tag").addEventListener("click", () => {
 document.getElementById("bulk-cancel").addEventListener("click", () => bulkModal.close());
 bulkModal.addEventListener("click", (e) => {
 	if (e.target === bulkModal) bulkModal.close();
+});
+bulkModal.addEventListener("keydown", (e) => {
+	if (e.key === "Enter") {
+		e.preventDefault();
+		document.getElementById("bulk-save").click();
+	}
 });
 
 document.getElementById("bulk-save").addEventListener("click", async () => {

@@ -24,6 +24,12 @@ function runParallelQueue(items, concurrency, processOne) {
 	autoModal.addEventListener("click", (e) => {
 		if (e.target === autoModal) autoModal.close();
 	});
+	autoModal.addEventListener("keydown", (e) => {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			document.getElementById("auto-start").click();
+		}
+	});
 	document.getElementById("auto-start").addEventListener("click", () => {
 		const fields = [];
 		if (document.getElementById("auto-name").checked) fields.push("name");
