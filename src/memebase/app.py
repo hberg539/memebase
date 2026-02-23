@@ -9,14 +9,14 @@ from flask import (
     jsonify,
     make_response,
 )
-from common import (
+from memebase.common import (
     ROOT_DIR,
     MEMES_DIR,
     ALLOWED_EXTENSIONS,
     CONTENT_TYPE_TO_EXT,
     USER_AGENT,
 )
-from db import (
+from memebase.db import (
     get_db,
     get_meme,
     get_meme_for_serving,
@@ -31,9 +31,9 @@ from db import (
     delete_meme_row,
     query_memes,
 )
-from service import resolve_unique_path, register_meme, get_meme_file_path
-from config import load_config
-from util import sanitize_filename
+from memebase.service import resolve_unique_path, register_meme, get_meme_file_path
+from memebase.config import load_config
+from memebase.util import sanitize_filename
 
 try:
     import tomllib
@@ -276,7 +276,7 @@ def list_tags():
 
 @app.route("/api/memes/<uuid>/auto", methods=["POST"])
 def auto_describe(uuid):
-    from ai import analyze_meme
+    from memebase.ai import analyze_meme
 
     with get_db() as conn:
         filename, path, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
@@ -300,7 +300,7 @@ def auto_describe(uuid):
 
 @app.route("/api/memes/bulk/auto", methods=["POST"])
 def bulk_auto():
-    from ai import analyze_meme
+    from memebase.ai import analyze_meme
 
     data = request.get_json()
     uuids = data.get("uuids", [])

@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from service import resolve_unique_path, register_meme
+from memebase.service import resolve_unique_path, register_meme
 
 
 class TestResolveUniquePath:

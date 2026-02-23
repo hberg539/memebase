@@ -3,8 +3,8 @@ import sqlite3
 import uuid as uuid_mod
 from typing import Any
 
-from db import find_by_sha256, get_meme, get_meme_filename, insert_meme
-from util import file_hash
+from memebase.db import find_by_sha256, get_meme, get_meme_filename, insert_meme
+from memebase.util import file_hash
 
 
 def resolve_unique_path(directory: str, basename: str) -> tuple[str, str]:

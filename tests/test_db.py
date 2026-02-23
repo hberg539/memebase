@@ -1,4 +1,4 @@
-from db import _normalize_tags
+from memebase.db import _normalize_tags
 
 
 def test_lowercase_and_strip():

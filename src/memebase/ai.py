@@ -7,7 +7,7 @@ from typing import Any
 
 import litellm
 
-from config import load_config
+from memebase.config import load_config
 
 log = logging.getLogger(__name__)
 

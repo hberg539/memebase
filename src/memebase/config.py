@@ -8,7 +8,7 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
-from common import CONFIG_DEFAULT, CONFIG_PATH
+from memebase.common import CONFIG_DEFAULT, CONFIG_PATH
 
 log = logging.getLogger(__name__)
 

@@ -17,13 +17,13 @@ docker-compose up          # Run with Docker
 **Entrypoint:**
 - `main.py` - App entrypoint (inits DB, starts Flask server)
 
-**Backend (Python/Flask) - `src/`:**
-- `src/common.py` - Shared constants (paths, allowed extensions, content-type map, sort options)
-- `src/app.py` - Flask routes and all API endpoints
-- `src/service.py` - Business logic extracted from routes (file collision handling, meme registration, file path lookup)
-- `src/ai.py` - AI integration via LiteLLM for meme analysis (returns name/description/tags as JSON)
-- `src/db.py` - SQLite database layer (schema, queries, all SQL)
-- `src/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
+**Backend (Python/Flask) - `src/memebase/`:**
+- `src/memebase/common.py` - Shared constants (paths, allowed extensions, content-type map, sort options)
+- `src/memebase/app.py` - Flask routes and all API endpoints
+- `src/memebase/service.py` - Business logic extracted from routes (file collision handling, meme registration, file path lookup)
+- `src/memebase/ai.py` - AI integration via LiteLLM for meme analysis (returns name/description/tags as JSON)
+- `src/memebase/db.py` - SQLite database layer (schema, queries, all SQL)
+- `src/memebase/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
 **Tests - `tests/`:**
 - `tests/test_sanitize.py` - Filename sanitization tests
@@ -57,16 +57,19 @@ GitHub Actions runs `uv run pytest` on every push and PR (`.github/workflows/tes
 
 ## Rules
 
-- Always use type hints on function signatures (parameters and return types). Use modern Python syntax (`list[str]`, `X | None`) instead of `typing.List` or `typing.Optional`.
 - Never commit or push without being explicitly asked to.
-
 - When features, configuration, or usage changes, update `README.md` accordingly.
 - `README.md` is user-facing - write it in a laid-back, casual tone. The audience is end-users and shitposters, not enterprise architects. Keep it fun and approachable.
-
+- Never break the user's SQLite database. Schema changes must be backwards-compatible so existing data remains valid when the user updates the Docker image or pulls the latest code. Use additive migrations (new columns with defaults, new tables) instead of destructive changes (dropping/renaming columns, changing types). If a change would break existing databases, alert the developer before proceeding.
 - Never use em dashes. Use regular dashes (-) or rewrite the sentence instead.
 - Never use special Unicode characters in comments or strings that can't be typed on a standard keyboard. Stick to plain ASCII (e.g. use `--` not `──`, use `...` not `…`, use regular quotes not curly quotes).
-- Never break the user's SQLite database. Schema changes must be backwards-compatible so existing data remains valid when the user updates the Docker image or pulls the latest code. Use additive migrations (new columns with defaults, new tables) instead of destructive changes (dropping/renaming columns, changing types). If a change would break existing databases, alert the developer before proceeding.
 
+## Code Style
+
+- Write Pythonic, idiomatic code. Prefer built-in patterns, standard library idioms, and clean readable code over clever tricks.
+- Always use type hints on function signatures (parameters and return types). Use modern Python syntax (`list[str]`, `X | None`) instead of `typing.List` or `typing.Optional`.
+- Use absolute package imports (`from memebase.x import ...`), never bare `from x import ...`.
+- Use `pathlib.Path` instead of `os.path` for filesystem operations.
 
 ## Commit Convention
 

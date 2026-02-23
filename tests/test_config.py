@@ -1,6 +1,6 @@
 import copy
 
-from config import _DEFAULTS, _deep_merge
+from memebase.config import _DEFAULTS, _deep_merge
 
 
 def test_empty_user_config():

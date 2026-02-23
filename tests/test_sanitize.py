@@ -1,4 +1,4 @@
-from util import sanitize_filename
+from memebase.util import sanitize_filename
 
 
 def test_normal_filename():

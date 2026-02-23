@@ -1,6 +1,6 @@
 import pytest
 
-from ai import build_prompt, parse_ai_response
+from memebase.ai import build_prompt, parse_ai_response
 
 
 class TestBuildPrompt:

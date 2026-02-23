@@ -2,7 +2,7 @@ import os
 import sqlite3
 from typing import Any
 
-from common import DB_PATH, MEMES_DIR, SORT_OPTIONS
+from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS
 
 
 def get_db() -> sqlite3.Connection:
