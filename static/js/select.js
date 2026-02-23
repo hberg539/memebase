@@ -144,23 +144,26 @@ selAutoBtn.addEventListener("click", () => {
 		startBtn.classList.add("loading");
 		const uuids = [...selectedUuids];
 		const total = uuids.length;
-		let active = 0;
+		let done = 0;
 		const failed = [];
 		const parallel = window.AI_PARALLEL || 3;
+		autoTitle.textContent = `Processing 1/${total}...`;
 
 		async function processOne(u) {
-			active++;
-			autoTitle.textContent = `Processing ${active}/${total}...`;
+			done++;
+			autoTitle.textContent = `Processing ${done}/${total}...`;
 			try {
 				let suggestion;
 				try {
 					suggestion = await Api.autoDetect(u);
 				} catch (e) {
 					failed.push(u);
+					showAlert("Detection failed for meme", "error");
 					return;
 				}
 				if (suggestion.error) {
 					failed.push(u);
+					showAlert(`Detection failed: ${suggestion.error}`, "error");
 					return;
 				}
 				const body = {};
@@ -171,12 +174,14 @@ selAutoBtn.addEventListener("click", () => {
 				if (Object.keys(body).length) {
 					await Api.updateMeme(u, body);
 				}
+				showAlert(`Detected: ${suggestion.name || u.slice(0, 8)}`, "success");
 			} catch (e) {
 				failed.push(u);
+				showAlert(`${suggestion?.name || u.slice(0, 8)}: ${e.message}`, "error");
+			} finally {
+				await load(search.value);
+				restoreSelection();
 			}
-			active--;
-			await load(search.value);
-			restoreSelection();
 		}
 
 		await runParallelQueue(uuids, parallel, processOne);
