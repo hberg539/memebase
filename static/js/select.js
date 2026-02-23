@@ -144,12 +144,13 @@ selAutoBtn.addEventListener("click", () => {
 		startBtn.classList.add("loading");
 		const uuids = [...selectedUuids];
 		const total = uuids.length;
-		let done = 0;
+		let active = 0;
 		const failed = [];
 		const parallel = window.AI_PARALLEL || 3;
-		autoTitle.textContent = `Processing 0/${total}...`;
 
 		async function processOne(u) {
+			active++;
+			autoTitle.textContent = `Processing ${active}/${total}...`;
 			try {
 				let suggestion;
 				try {
@@ -173,8 +174,7 @@ selAutoBtn.addEventListener("click", () => {
 			} catch (e) {
 				failed.push(u);
 			}
-			done++;
-			autoTitle.textContent = `Processing ${done}/${total}...`;
+			active--;
 			await load(search.value);
 			restoreSelection();
 		}
