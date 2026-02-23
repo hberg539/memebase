@@ -1,6 +1,4 @@
 import logging
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
 from flask import (
@@ -13,13 +11,7 @@ from flask import (
 )
 
 from memebase.ai import analyze_meme
-from memebase.common import (
-    ALLOWED_EXTENSIONS,
-    CONTENT_TYPE_TO_EXT,
-    MEMES_DIR,
-    ROOT_DIR,
-    USER_AGENT,
-)
+from memebase.common import ALLOWED_EXTENSIONS, MEMES_DIR, ROOT_DIR
 from memebase.config import load_config
 from memebase.db import (
     add_tags,
@@ -38,7 +30,13 @@ from memebase.db import (
     update_filename,
 )
 from memebase.schemas import MemeError
-from memebase.service import get_meme_file_path, register_meme, resolve_unique_path
+from memebase.service import (
+    apply_ai_suggestions,
+    download_from_url,
+    get_meme_file_path,
+    register_meme,
+    resolve_unique_path,
+)
 from memebase.util import sanitize_filename
 
 try:
@@ -175,41 +173,12 @@ def upload_from_url():
     if not url:
         return jsonify({"error": "No URL provided"}), 400
 
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        return jsonify({"error": "Only http and https URLs are supported"}), 400
-
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            # Try Content-Disposition for filename
-            cd = resp.headers.get("Content-Disposition", "")
-            filename = None
-            if "filename=" in cd:
-                filename = cd.split("filename=")[-1].strip().strip('"').strip("'")
+        basename, content = download_from_url(url)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
-            if not filename:
-                path_part = urllib.parse.urlparse(url).path
-                filename = Path(path_part).name or "download"
-
-            # Ensure it has an allowed extension
-            fp = Path(filename)
-            ext = fp.suffix.lower()
-            if not ext:
-                ct = resp.headers.get("Content-Type", "")
-                ext = CONTENT_TYPE_TO_EXT.get(ct.split(";")[0].strip(), "")
-                filename += ext
-
-            if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
-                return jsonify({"error": f"Unsupported file type: {ext or 'unknown'}"}), 400
-
-            content = resp.read()
-    except Exception as e:
-        return jsonify({"error": f"Failed to download: {e}"}), 400
-
-    basename = sanitize_filename(filename)
     dest, basename = resolve_unique_path(MEMES_DIR, basename)
-
     with open(dest, "wb") as f:
         f.write(content)
 
@@ -329,22 +298,7 @@ def bulk_auto():
                 results[u] = {"error": str(e)}
                 continue
 
-            # Apply requested fields
-            if "name" in fields and suggestion.get("name"):
-                orig_ext = Path(filename).suffix
-                new_filename = sanitize_filename(suggestion["name"].strip() + orig_ext)
-                new_path = MEMES_DIR / new_filename
-                if not new_path.exists() or new_filename == filename:
-                    old_path = MEMES_DIR / filename
-                    if new_filename != filename:
-                        old_path.rename(new_path)
-                    update_filename(conn, u, new_filename)
-
-            if "description" in fields and suggestion.get("description"):
-                update_description(conn, u, suggestion["description"])
-
-            if "tags" in fields and suggestion.get("tags"):
-                add_tags(conn, u, suggestion["tags"])
+            apply_ai_suggestions(conn, u, filename, suggestion, fields, MEMES_DIR)
 
             results[u] = {"ok": True}
             log.info("Bulk auto-detect completed: %s (%s)", filename, u)

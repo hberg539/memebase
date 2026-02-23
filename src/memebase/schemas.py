@@ -24,6 +24,12 @@ class AppConfig(TypedDict):
     ai: AiConfig
 
 
+class AiSuggestion(TypedDict, total=False):
+    name: str
+    description: str
+    tags: list[str]
+
+
 class Meme(TypedDict):
     uuid: str
     sha256: str

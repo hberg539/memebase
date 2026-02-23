@@ -3,9 +3,10 @@ import json
 import logging
 import mimetypes
 import re
-from typing import Any
 
 import litellm
+
+from memebase.schemas import AiSuggestion
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ def encode_image(image_path: str) -> tuple[str, str]:
     return mime, image_data
 
 
-def parse_ai_response(raw_text: str) -> dict[str, Any]:
+def parse_ai_response(raw_text: str) -> AiSuggestion:
     """Strip markdown code fences and parse JSON from AI response text."""
     stripped = re.sub(r"^```(?:json)?\s*\n?", "", raw_text.strip())
     stripped = re.sub(r"\n?```\s*$", "", stripped)
@@ -34,7 +35,7 @@ def parse_ai_response(raw_text: str) -> dict[str, Any]:
 
 def analyze_meme(
     image_path: str, existing_tags: list[str], *, model: str, prompt_template: str
-) -> dict[str, Any]:
+) -> AiSuggestion:
     prompt = build_prompt(prompt_template, existing_tags)
 
     mime, image_data = encode_image(image_path)
