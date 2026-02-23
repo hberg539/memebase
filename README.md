@@ -38,6 +38,7 @@ docker-compose up -d
 services:
   memebase:
     image: ghcr.io/hberg539/memebase:latest
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
@@ -92,6 +93,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 services:
   memebase:
     image: ghcr.io/hberg539/memebase:latest
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
