@@ -165,6 +165,10 @@ def upload_from_url():
     if not url:
         return jsonify({"error": "No URL provided"}), 400
 
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return jsonify({"error": "Only http and https URLs are supported"}), 400
+
     try:
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=30) as resp:
