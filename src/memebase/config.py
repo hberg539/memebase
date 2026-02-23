@@ -34,15 +34,23 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return merged
 
 
-def load_config() -> dict[str, Any]:
-    """Load config.toml from the data directory, copying the default if missing.
+_cached: dict[str, Any] | None = None
 
-    The returned dict is the user config deep-merged over built-in defaults,
-    so every expected key is always present.
+
+def load_config() -> dict[str, Any]:
+    """Return the cached application config, loading from disk on first call.
+
+    Copies the default config into the data directory if missing, then
+    deep-merges the user config over built-in defaults so every expected
+    key is always present.
     """
+    global _cached
+    if _cached is not None:
+        return _cached
     if not CONFIG_PATH.exists():
         shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
         log.info("Copied default config to %s", CONFIG_PATH)
     with open(CONFIG_PATH, "rb") as f:
         user_cfg = tomllib.load(f)
-    return _deep_merge(_DEFAULTS, user_cfg)
+    _cached = _deep_merge(_DEFAULTS, user_cfg)
+    return _cached
