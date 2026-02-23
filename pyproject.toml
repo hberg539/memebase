@@ -1,6 +1,6 @@
 [project]
 name = "memebase"
-version = "0.1.0"
+version = "0.2.0"
 description = "Web-based meme manager"
 requires-python = ">=3.10"
 dependencies = ["flask>=3.0", "Pillow>=10.0", "litellm>=1.0"]
