@@ -8,6 +8,7 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 from memebase.common import CONFIG_DEFAULT, CONFIG_PATH
+from memebase.schemas import AppConfig
 
 log = logging.getLogger(__name__)
 
@@ -34,10 +35,10 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return merged
 
 
-_cached: dict[str, Any] | None = None
+_cached: AppConfig | None = None
 
 
-def load_config() -> dict[str, Any]:
+def load_config() -> AppConfig:
     """Return the cached application config, loading from disk on first call.
 
     Copies the default config into the data directory if missing, then

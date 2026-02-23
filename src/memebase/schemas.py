@@ -7,6 +7,23 @@ class MemeError(StrEnum):
     NOT_ON_DISK = "not_on_disk"
 
 
+class GridConfig(TypedDict):
+    thumbnail_size: int
+    page_size: int
+
+
+class AiConfig(TypedDict):
+    enabled: bool
+    model: str
+    parallel: int
+    prompt: str
+
+
+class AppConfig(TypedDict):
+    grid: GridConfig
+    ai: AiConfig
+
+
 class Meme(TypedDict):
     uuid: str
     sha256: str
