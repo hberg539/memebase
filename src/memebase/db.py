@@ -186,27 +186,19 @@ def _build_where(parts: list[str]) -> str:
     return (" WHERE " + " AND ".join(parts)) if parts else ""
 
 
-def query_memes(
-    conn: sqlite3.Connection,
-    q: str = "",
-    page: int = 1,
-    page_size: int = 50,
-    ext_filter: str | None = None,
-    tag_filters: list[str] | None = None,
-    fav_filter: bool = False,
-    sort: str = "",
-) -> dict[str, Any]:
-    """
-    Run a faceted meme query. Returns dict with keys:
-      memes    — list of meme dicts (with tags)
-      total    — total matching count
-      filters  — {exts: {ext: count}, tags: {tag: count}, fav_count: int}
-    """
-    tag_filters = tag_filters or []
-    order = SORT_OPTIONS.get(sort, "m.created_at DESC")
+def _build_filter_clauses(
+    q: str,
+    ext_filter: str | None,
+    tag_filters: list[str],
+    fav_filter: bool,
+) -> dict[str, tuple[list[str], list[str]]]:
+    """Build SQL WHERE clause parts and params for each filter dimension.
 
-    # Build individual filter clauses
-    search_parts, search_params = [], []
+    Returns dict with keys: search, ext, tag, fav.
+    Each value is (parts, params).
+    """
+    search_parts: list[str] = []
+    search_params: list[str] = []
     if q:
         for w in q.split():
             like = f"%{w}%"
@@ -219,23 +211,36 @@ def query_memes(
     ext_parts = ["LOWER(m.filename) LIKE ?"] if ext_filter else []
     ext_params = [f"%.{ext_filter}"] if ext_filter else []
 
-    tag_parts, tag_params = [], []
+    tag_parts: list[str] = []
+    tag_params: list[str] = []
     for tf in tag_filters:
         tag_parts.append("EXISTS (SELECT 1 FROM tags tf WHERE tf.uuid = m.uuid AND tf.tag = ?)")
         tag_params.append(tf)
 
     fav_parts = ["m.favorite = 1"] if fav_filter else []
 
-    # Full filter for results + total count
-    all_parts = search_parts + ext_parts + tag_parts + fav_parts
-    all_params = search_params + ext_params + tag_params
-    where_sql = _build_where(all_parts)
+    return {
+        "search": (search_parts, search_params),
+        "ext": (ext_parts, ext_params),
+        "tag": (tag_parts, tag_params),
+        "fav": (fav_parts, []),
+    }
 
-    total = conn.execute(f"SELECT COUNT(*) as c FROM memes m{where_sql}", all_params).fetchone()[
-        "c"
-    ]
 
-    # Base set from search only — for the full list of available exts/tags
+def _get_facet_counts(
+    conn: sqlite3.Connection,
+    clauses: dict[str, tuple[list[str], list[str]]],
+) -> dict[str, Any]:
+    """Run faceted count queries for ext, tag, and fav dimensions.
+
+    Returns {"exts": {...}, "tags": {...}, "fav_count": int}.
+    """
+    search_parts, search_params = clauses["search"]
+    ext_parts, ext_params = clauses["ext"]
+    tag_parts, tag_params = clauses["tag"]
+    fav_parts, _ = clauses["fav"]
+
+    # Base set from search only - for the full list of available exts/tags
     base_where = _build_where(search_parts)
 
     all_exts_rows = conn.execute(
@@ -294,6 +299,40 @@ def query_memes(
         fav_facet_params,
     ).fetchone()["c"]
 
+    return {"exts": exts, "tags": tags, "fav_count": fav_count}
+
+
+def query_memes(
+    conn: sqlite3.Connection,
+    q: str = "",
+    page: int = 1,
+    page_size: int = 50,
+    ext_filter: str | None = None,
+    tag_filters: list[str] | None = None,
+    fav_filter: bool = False,
+    sort: str = "",
+) -> dict[str, Any]:
+    """Run a faceted meme query.
+
+    Returns dict with keys:
+      memes   - list of meme dicts (with tags)
+      total   - total matching count
+      filters - {exts: {ext: count}, tags: {tag: count}, fav_count: int}
+    """
+    clauses = _build_filter_clauses(q, ext_filter, tag_filters or [], fav_filter)
+    order = SORT_OPTIONS.get(sort, "m.created_at DESC")
+
+    # Combine all clause parts for the full filter
+    all_parts = [p for key in ("search", "ext", "tag", "fav") for p in clauses[key][0]]
+    all_params = [p for key in ("search", "ext", "tag") for p in clauses[key][1]]
+    where_sql = _build_where(all_parts)
+
+    total = conn.execute(f"SELECT COUNT(*) as c FROM memes m{where_sql}", all_params).fetchone()[
+        "c"
+    ]
+
+    filters = _get_facet_counts(conn, clauses)
+
     # Fetch one page of memes
     offset = (page - 1) * page_size
     rows = conn.execute(
@@ -303,12 +342,4 @@ def query_memes(
 
     memes = [get_meme(conn, row["uuid"]) for row in rows]
 
-    return {
-        "memes": memes,
-        "total": total,
-        "filters": {
-            "exts": exts,
-            "tags": tags,
-            "fav_count": fav_count,
-        },
-    }
+    return {"memes": memes, "total": total, "filters": filters}
