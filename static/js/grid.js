@@ -215,8 +215,8 @@ paginationEl.addEventListener("click", async (e) => {
 	if (!btn || btn.disabled) return;
 	currentPage = Number.parseInt(btn.dataset.page);
 	prevUuids = new Set();
+	window.scrollTo({ top: 0 });
 	await load(search.value);
-	window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 let timer;
