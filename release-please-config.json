@@ -6,7 +6,6 @@
 		{ "type": "refactor", "section": "Refactoring" },
 		{ "type": "perf", "section": "Performance" },
 		{ "type": "docs", "section": "Documentation" },
-		{ "type": "style", "section": "Styling" },
 		{ "type": "test", "section": "Tests" },
 		{ "type": "build", "section": "Build System" },
 		{ "type": "ci", "section": "CI/CD" },
