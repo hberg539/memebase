@@ -46,7 +46,6 @@ class Meme(TypedDict):
     size: int
     filename: str
     description: str
-    copy_count: int
     favorite: int
     created_at: str
     tags: list[str]

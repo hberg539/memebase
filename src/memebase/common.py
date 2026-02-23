@@ -31,6 +31,5 @@ SORT_OPTIONS = {
     "name": "m.filename",
     "newest": "m.created_at DESC",
     "oldest": "m.created_at",
-    "copies": "m.copy_count DESC",
     "favorites": "m.favorite DESC, m.created_at DESC",
 }

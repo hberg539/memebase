@@ -13,7 +13,6 @@ FAKE_MEME = {
     "size": 100,
     "filename": "test.png",
     "description": "",
-    "copy_count": 0,
     "favorite": 0,
     "created_at": "2024-01-01 00:00:00",
     "tags": [],
@@ -411,22 +410,3 @@ class TestBulkTags:
         assert resp.status_code == 200
         assert mock_remove.call_count == 1
         mock_add.assert_not_called()
-
-
-class TestIncrementCopy:
-    def test_success(self, client):
-        with (
-            patch("memebase.app.get_db"),
-            patch("memebase.app.increment_copy_count", return_value=5),
-        ):
-            resp = client.post("/api/memes/some-uuid/copy")
-        assert resp.status_code == 200
-        assert resp.get_json() == {"copy_count": 5}
-
-    def test_not_found_returns_404(self, client):
-        with (
-            patch("memebase.app.get_db"),
-            patch("memebase.app.increment_copy_count", return_value=None),
-        ):
-            resp = client.post("/api/memes/unknown/copy")
-        assert resp.status_code == 404

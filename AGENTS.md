@@ -48,7 +48,7 @@ docker-compose up          # Run with Docker
 
 ## Database Schema
 
-Two tables: `memes` (uuid PK, sha256 UNIQUE, size, filename, description, copy_count, favorite, timestamps) and `tags` (uuid + tag compound PK, cascading delete from memes).
+Two tables: `memes` (uuid PK, sha256 UNIQUE, size, filename, description, favorite, timestamps) and `tags` (uuid + tag compound PK, cascading delete from memes).
 
 ## CI
 

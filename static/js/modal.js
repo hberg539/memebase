@@ -34,7 +34,6 @@ grid.addEventListener("click", (e) => {
 		const card = copyBtn.closest(".card");
 		if (canCopy(copyBtn.dataset.filename)) copyImage(copyBtn.dataset.src, copyBtn);
 		else downloadFile(copyBtn.dataset.src, copyBtn.dataset.filename);
-		Api.trackCopy(card.dataset.uuid);
 		return;
 	}
 	const card = e.target.closest(".card");
@@ -97,7 +96,6 @@ document.getElementById("m-copy").addEventListener("click", () => {
 	const mediaSrc = mMedia.querySelector("img, video")?.src || "";
 	if (canCopy(filename)) copyImage(mediaSrc, mCopy);
 	else downloadFile(mediaSrc, filename);
-	Api.trackCopy(currentUuid);
 });
 
 /* -- Delete -- */

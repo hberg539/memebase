@@ -35,7 +35,6 @@ class TestRegisterMeme:
                 size INTEGER NOT NULL DEFAULT 0,
                 filename TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
-                copy_count INTEGER NOT NULL DEFAULT 0,
                 favorite INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))

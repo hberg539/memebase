@@ -41,13 +41,6 @@ const Api = (() => {
 			});
 		},
 
-		async trackCopy(uuid) {
-			const res = await fetch(`/api/memes/${encodeURIComponent(uuid)}/copy`, {
-				method: "POST",
-			});
-			return res.json();
-		},
-
 		async autoDetect(uuid) {
 			const res = await fetch(`/api/memes/${encodeURIComponent(uuid)}/auto`, {
 				method: "POST",

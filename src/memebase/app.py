@@ -20,7 +20,6 @@ from memebase.db import (
     get_db,
     get_meme,
     get_meme_for_serving,
-    increment_copy_count,
     init_app,
     query_memes,
     remove_tags,
@@ -383,15 +382,6 @@ def bulk_update_tags():
             if tags_to_remove:
                 remove_tags(conn, u, tags_to_remove)
     return jsonify({"ok": True})
-
-
-@app.route("/api/memes/<uuid>/copy", methods=["POST"])
-def increment_copy(uuid):
-    with get_db() as conn:
-        new_count = increment_copy_count(conn, uuid)
-        if new_count is None:
-            return jsonify({"error": "Not found"}), 404
-    return jsonify({"copy_count": new_count})
 
 
 @app.route("/api/memes/<uuid>", methods=["DELETE"])

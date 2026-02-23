@@ -45,7 +45,6 @@ def init_db() -> None:
                 size        INTEGER NOT NULL DEFAULT 0,
                 filename    TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT '',
-                copy_count  INTEGER NOT NULL DEFAULT 0,
                 favorite    INTEGER NOT NULL DEFAULT 0,
                 created_at  TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
@@ -71,7 +70,7 @@ def init_db() -> None:
 def get_meme(conn: sqlite3.Connection, uuid: str) -> Meme | None:
     """Get a meme dict with tags by uuid, or None if not found."""
     row = conn.execute(
-        "SELECT uuid, sha256, size, filename, description, copy_count, favorite, created_at "
+        "SELECT uuid, sha256, size, filename, description, favorite, created_at "
         "FROM memes WHERE uuid = ?",
         (uuid,),
     ).fetchone()
@@ -131,15 +130,6 @@ def update_filename(conn: sqlite3.Connection, uuid: str, filename: str) -> None:
         "UPDATE memes SET filename = ?, updated_at = datetime('now') WHERE uuid = ?",
         (filename, uuid),
     )
-
-
-def increment_copy_count(conn: sqlite3.Connection, uuid: str) -> int | None:
-    """Increment copy_count and return the new value, or None if not found."""
-    row = conn.execute(
-        "UPDATE memes SET copy_count = copy_count + 1 WHERE uuid = ? RETURNING copy_count",
-        (uuid,),
-    ).fetchone()
-    return row["copy_count"] if row else None
 
 
 def delete_meme_row(conn: sqlite3.Connection, uuid: str) -> str | None:
@@ -353,7 +343,7 @@ def query_memes(
     offset = (page - 1) * page_size
     rows = conn.execute(
         f"SELECT m.uuid, m.sha256, m.size, m.filename, m.description, "
-        f"m.copy_count, m.favorite, m.created_at "
+        f"m.favorite, m.created_at "
         f"FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
         [*all_params, page_size, offset],
     ).fetchall()
