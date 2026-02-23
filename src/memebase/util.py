@@ -50,6 +50,11 @@ def sanitize_filename(name: str) -> str:
     return name
 
 
+def normalize_tags(tags: list[str]) -> set[str]:
+    """Deduplicate and normalize a list of tags."""
+    return {t.strip().lower() for t in set(tags)} - {""}
+
+
 def file_hash(path: str) -> str:
     """Compute SHA256 hex digest of a file."""
     h = hashlib.sha256()

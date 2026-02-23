@@ -1,4 +1,4 @@
-from memebase.util import sanitize_filename
+from memebase.util import normalize_tags, sanitize_filename
 
 
 def test_normal_filename():
@@ -82,3 +82,24 @@ def test_mixed_separators():
 def test_extension_preserved():
     assert sanitize_filename("my:file.webm") == "my_file.webm"
     assert sanitize_filename("test<>.mp4") == "test__.mp4"
+
+
+# ---------------------------------------------------------------------------
+# normalize_tags
+# ---------------------------------------------------------------------------
+
+
+def test_tags_lowercase_and_strip():
+    assert normalize_tags(["  Hello ", "WORLD"]) == {"hello", "world"}
+
+
+def test_tags_dedup():
+    assert normalize_tags(["a", "A", "a"]) == {"a"}
+
+
+def test_tags_empty_filtered():
+    assert normalize_tags(["", "  ", "ok"]) == {"ok"}
+
+
+def test_tags_all_empty():
+    assert normalize_tags(["", " "]) == set()

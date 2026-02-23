@@ -4,6 +4,7 @@ from typing import Any
 from flask import Flask, g
 
 from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS
+from memebase.util import normalize_tags
 
 
 def _connect_db() -> sqlite3.Connection:
@@ -157,27 +158,22 @@ def get_all_tags(conn: sqlite3.Connection) -> list[str]:
     return [r["tag"] for r in rows]
 
 
-def _normalize_tags(tags: list[str]) -> set[str]:
-    """Deduplicate and normalize a list of tags."""
-    return {t.strip().lower() for t in set(tags)} - {""}
-
-
 def set_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Replace all tags for a meme."""
     conn.execute("DELETE FROM tags WHERE uuid = ?", (uuid,))
-    for tag in _normalize_tags(tags):
+    for tag in normalize_tags(tags):
         conn.execute("INSERT INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
 def add_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Add tags to a meme (ignores duplicates)."""
-    for tag in _normalize_tags(tags):
+    for tag in normalize_tags(tags):
         conn.execute("INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
 def remove_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Remove specific tags from a meme."""
-    for tag in _normalize_tags(tags):
+    for tag in normalize_tags(tags):
         conn.execute("DELETE FROM tags WHERE uuid = ? AND tag = ?", (uuid, tag))
 
 

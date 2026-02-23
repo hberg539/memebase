@@ -26,8 +26,7 @@ docker-compose up          # Run with Docker
 - `src/memebase/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
 **Tests - `tests/`:**
-- `tests/test_sanitize.py` - Filename sanitization tests
-- `tests/test_db.py` - Tag normalization tests
+- `tests/test_util.py` - Utility tests (filename sanitization, tag normalization)
 - `tests/test_ai.py` - Prompt building and AI response parsing tests
 - `tests/test_service.py` - Service layer tests (path resolution, meme registration)
 
