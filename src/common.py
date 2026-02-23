@@ -8,6 +8,8 @@ DB_PATH = os.path.join(DATA_DIR, "memes.db")
 MEMES_DIR = os.path.join(DATA_DIR, "memes")
 
 
+DEBUG = os.getenv("MEMEBASE_DEBUG", "1") == "1"
+
 USER_AGENT = "memebase/1.0"
 
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".webm", ".mp4"}

@@ -10,6 +10,8 @@ COPY src/ src/
 COPY templates/ templates/
 COPY static/ static/
 
+ENV MEMEBASE_DEBUG=0
+
 EXPOSE 5000
 
 CMD [".venv/bin/python", "main.py"]
