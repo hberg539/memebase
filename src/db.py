@@ -1,11 +1,11 @@
+import os
 import sqlite3
+from typing import Any
 
 from common import DB_PATH, MEMES_DIR, SORT_OPTIONS
 
-import os
 
-
-def get_db():
+def get_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -13,7 +13,7 @@ def get_db():
     return conn
 
 
-def init_db():
+def init_db() -> None:
     os.makedirs(MEMES_DIR, exist_ok=True)
     with get_db() as conn:
         conn.execute("""
@@ -43,7 +43,7 @@ def init_db():
 # ---------------------------------------------------------------------------
 
 
-def get_meme(conn, uuid):
+def get_meme(conn: sqlite3.Connection, uuid: str) -> dict[str, Any] | None:
     """Get a meme dict with tags by uuid, or None if not found."""
     row = conn.execute(
         "SELECT uuid, sha256, size, filename, description, copy_count, favorite, created_at "
@@ -58,25 +58,25 @@ def get_meme(conn, uuid):
     return d
 
 
-def get_meme_filename(conn, uuid):
+def get_meme_filename(conn: sqlite3.Connection, uuid: str) -> str | None:
     """Get just the filename for a meme, or None if not found."""
     row = conn.execute("SELECT filename FROM memes WHERE uuid = ?", (uuid,)).fetchone()
     return row["filename"] if row else None
 
 
-def get_meme_for_serving(conn, uuid):
+def get_meme_for_serving(conn: sqlite3.Connection, uuid: str) -> tuple[str, str] | None:
     """Get (filename, sha256) for serving a meme file, or None if not found."""
     row = conn.execute("SELECT filename, sha256 FROM memes WHERE uuid = ?", (uuid,)).fetchone()
     return (row["filename"], row["sha256"]) if row else None
 
 
-def find_by_sha256(conn, sha256):
+def find_by_sha256(conn: sqlite3.Connection, sha256: str) -> str | None:
     """Find a meme uuid by its sha256 hash. Returns uuid string or None."""
     row = conn.execute("SELECT uuid FROM memes WHERE sha256 = ?", (sha256,)).fetchone()
     return row["uuid"] if row else None
 
 
-def insert_meme(conn, uuid, sha256, size, filename):
+def insert_meme(conn: sqlite3.Connection, uuid: str, sha256: str, size: int, filename: str) -> None:
     """Insert a new meme row."""
     conn.execute(
         "INSERT INTO memes (uuid, sha256, size, filename) VALUES (?, ?, ?, ?)",
@@ -84,7 +84,7 @@ def insert_meme(conn, uuid, sha256, size, filename):
     )
 
 
-def update_favorite(conn, uuid, favorite):
+def update_favorite(conn: sqlite3.Connection, uuid: str, favorite: bool) -> None:
     """Set the favorite flag (0 or 1)."""
     conn.execute(
         "UPDATE memes SET favorite = ?, updated_at = datetime('now') WHERE uuid = ?",
@@ -92,7 +92,7 @@ def update_favorite(conn, uuid, favorite):
     )
 
 
-def update_description(conn, uuid, description):
+def update_description(conn: sqlite3.Connection, uuid: str, description: str) -> None:
     """Update the description text."""
     conn.execute(
         "UPDATE memes SET description = ?, updated_at = datetime('now') WHERE uuid = ?",
@@ -100,7 +100,7 @@ def update_description(conn, uuid, description):
     )
 
 
-def update_filename(conn, uuid, filename):
+def update_filename(conn: sqlite3.Connection, uuid: str, filename: str) -> None:
     """Update the stored filename."""
     conn.execute(
         "UPDATE memes SET filename = ?, updated_at = datetime('now') WHERE uuid = ?",
@@ -108,7 +108,7 @@ def update_filename(conn, uuid, filename):
     )
 
 
-def increment_copy_count(conn, uuid):
+def increment_copy_count(conn: sqlite3.Connection, uuid: str) -> int | None:
     """Increment copy_count and return the new value, or None if not found."""
     row = conn.execute("SELECT uuid FROM memes WHERE uuid = ?", (uuid,)).fetchone()
     if not row:
@@ -118,7 +118,7 @@ def increment_copy_count(conn, uuid):
     return updated["copy_count"]
 
 
-def delete_meme_row(conn, uuid):
+def delete_meme_row(conn: sqlite3.Connection, uuid: str) -> str | None:
     """Delete a meme row, returning the filename (for file cleanup), or None if not found."""
     row = conn.execute("SELECT filename FROM memes WHERE uuid = ?", (uuid,)).fetchone()
     if not row:
@@ -132,31 +132,31 @@ def delete_meme_row(conn, uuid):
 # ---------------------------------------------------------------------------
 
 
-def get_all_tags(conn):
+def get_all_tags(conn: sqlite3.Connection) -> list[str]:
     """Return a sorted list of all distinct tag strings."""
     rows = conn.execute("SELECT DISTINCT tag FROM tags ORDER BY tag").fetchall()
     return [r["tag"] for r in rows]
 
 
-def _normalize_tags(tags):
+def _normalize_tags(tags: list[str]) -> set[str]:
     """Deduplicate and normalize a list of tags."""
     return {t.strip().lower() for t in set(tags)} - {""}
 
 
-def set_tags(conn, uuid, tags):
+def set_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Replace all tags for a meme."""
     conn.execute("DELETE FROM tags WHERE uuid = ?", (uuid,))
     for tag in _normalize_tags(tags):
         conn.execute("INSERT INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
-def add_tags(conn, uuid, tags):
+def add_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Add tags to a meme (ignores duplicates)."""
     for tag in _normalize_tags(tags):
         conn.execute("INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)", (uuid, tag))
 
 
-def remove_tags(conn, uuid, tags):
+def remove_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
     """Remove specific tags from a meme."""
     for tag in _normalize_tags(tags):
         conn.execute("DELETE FROM tags WHERE uuid = ? AND tag = ?", (uuid, tag))
@@ -167,20 +167,20 @@ def remove_tags(conn, uuid, tags):
 # ---------------------------------------------------------------------------
 
 
-def _build_where(parts):
+def _build_where(parts: list[str]) -> str:
     return (" WHERE " + " AND ".join(parts)) if parts else ""
 
 
 def query_memes(
-    conn,
-    q="",
-    page=1,
-    page_size=50,
-    ext_filter=None,
-    tag_filters=None,
-    fav_filter=False,
-    sort="",
-):
+    conn: sqlite3.Connection,
+    q: str = "",
+    page: int = 1,
+    page_size: int = 50,
+    ext_filter: str | None = None,
+    tag_filters: list[str] | None = None,
+    fav_filter: bool = False,
+    sort: str = "",
+) -> dict[str, Any]:
     """
     Run a faceted meme query. Returns dict with keys:
       memes    — list of meme dicts (with tags)

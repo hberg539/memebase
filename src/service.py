@@ -1,11 +1,13 @@
 import os
+import sqlite3
 import uuid as uuid_mod
+from typing import Any
 
 from db import find_by_sha256, get_meme, get_meme_filename, insert_meme
 from util import file_hash
 
 
-def resolve_unique_path(directory, basename):
+def resolve_unique_path(directory: str, basename: str) -> tuple[str, str]:
     """Return (dest_path, final_basename) avoiding filename collisions."""
     dest = os.path.join(directory, basename)
     if os.path.exists(dest):
@@ -18,7 +20,7 @@ def resolve_unique_path(directory, basename):
     return dest, basename
 
 
-def register_meme(conn, file_path):
+def register_meme(conn: sqlite3.Connection, file_path: str) -> tuple[dict[str, Any], bool]:
     """Hash file, check for duplicate, insert or return existing.
 
     Returns (meme_dict, is_duplicate).
@@ -36,7 +38,9 @@ def register_meme(conn, file_path):
     return get_meme(conn, new_uuid), False
 
 
-def get_meme_file_path(conn, uuid, memes_dir):
+def get_meme_file_path(
+    conn: sqlite3.Connection, uuid: str, memes_dir: str
+) -> tuple[str | None, str | None, str | None]:
     """Look up filename and verify file exists on disk.
 
     Returns (filename, path, error_reason).

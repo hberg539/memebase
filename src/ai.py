@@ -3,6 +3,7 @@ import json
 import logging
 import mimetypes
 import re
+from typing import Any
 
 import litellm
 
@@ -11,12 +12,12 @@ from util import load_config
 log = logging.getLogger(__name__)
 
 
-def build_prompt(template, existing_tags):
+def build_prompt(template: str, existing_tags: list[str]) -> str:
     """Substitute {tags} placeholder in the prompt template."""
     return template.replace("{tags}", ", ".join(existing_tags))
 
 
-def encode_image(image_path):
+def encode_image(image_path: str) -> tuple[str, str]:
     """Read an image file and return (mime_type, base64_data)."""
     mime, _ = mimetypes.guess_type(image_path)
     if mime is None:
@@ -26,14 +27,14 @@ def encode_image(image_path):
     return mime, image_data
 
 
-def parse_ai_response(raw_text):
+def parse_ai_response(raw_text: str) -> dict[str, Any]:
     """Strip markdown code fences and parse JSON from AI response text."""
     stripped = re.sub(r"^```(?:json)?\s*\n?", "", raw_text.strip())
     stripped = re.sub(r"\n?```\s*$", "", stripped)
     return json.loads(stripped)
 
 
-def analyze_meme(image_path: str, existing_tags: list[str]) -> dict:
+def analyze_meme(image_path: str, existing_tags: list[str]) -> dict[str, Any]:
     cfg = load_config()["ai"]
     prompt = build_prompt(cfg["prompt"], existing_tags)
     model = cfg["model"]

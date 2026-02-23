@@ -57,6 +57,7 @@ GitHub Actions runs `uv run pytest` on every push and PR (`.github/workflows/tes
 
 ## Rules
 
+- Always use type hints on function signatures (parameters and return types). Use modern Python syntax (`list[str]`, `X | None`) instead of `typing.List` or `typing.Optional`.
 - Never commit or push without being explicitly asked to.
 
 - When features, configuration, or usage changes, update `README.md` accordingly.

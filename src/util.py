@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import unicodedata
+from typing import Any
 
 try:
     import tomllib
@@ -20,7 +21,7 @@ _RESERVED_CHARS = re.compile(r'[<>:"/\\|?*#%\x00-\x1f]')
 _RESERVED_NAMES = re.compile(r"^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\.|$)", re.IGNORECASE)
 
 
-def sanitize_filename(name):
+def sanitize_filename(name: str) -> str:
     """Sanitize a filename to be safe on Windows, macOS, and Linux. UTF-8 allowed."""
     # Normalize unicode
     name = unicodedata.normalize("NFC", name)
@@ -59,7 +60,7 @@ def sanitize_filename(name):
     return name
 
 
-def file_hash(path):
+def file_hash(path: str) -> str:
     """Compute SHA256 hex digest of a file."""
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -68,7 +69,7 @@ def file_hash(path):
     return h.hexdigest()
 
 
-def load_config():
+def load_config() -> dict[str, Any]:
     """Load config.toml from the data directory, copying the default if missing."""
     if not os.path.exists(CONFIG_PATH):
         shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
