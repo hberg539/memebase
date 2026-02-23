@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.1](https://github.com/hberg539/memebase/compare/v0.5.0...v0.5.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* **ui:** per-item toasts and correct progress counter for bulk auto-detect ([75f91e3](https://github.com/hberg539/memebase/commit/75f91e33c735f58c5ff8a9317c63b588c6505b30))
+
+
+### Documentation
+
+* update main screenshot ([f9fc31d](https://github.com/hberg539/memebase/commit/f9fc31d27c9832bc24b254249efa38fcfbbfdb75))
+
 ## [0.5.0](https://github.com/hberg539/memebase/compare/v0.4.1...v0.5.0) (2026-02-23)
 
 
