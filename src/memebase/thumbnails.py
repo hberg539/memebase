@@ -25,6 +25,16 @@ def _has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+def _fit_cover(img: Image.Image, max_size: int) -> Image.Image:
+    """Downscale so the short side = *max_size* (no upscale)."""
+    w, h = img.size
+    short = min(w, h)
+    if short > max_size:
+        scale = max_size / short
+        img = img.resize((round(w * scale), round(h * scale)), Image.LANCZOS)
+    return img
+
+
 def _generate_image_thumbnail(source: Path, dest: Path, cfg: dict) -> Path:
     """Generate a thumbnail from an image file using Pillow."""
     max_size = cfg["max_size"]
@@ -32,7 +42,7 @@ def _generate_image_thumbnail(source: Path, dest: Path, cfg: dict) -> Path:
     fmt = cfg["format"]
 
     with Image.open(source) as img:
-        img.thumbnail((max_size, max_size), Image.LANCZOS)
+        img = _fit_cover(img, max_size)
 
         # Composite RGBA onto dark background for JPEG output
         if fmt == "jpeg" and img.mode == "RGBA":
@@ -86,7 +96,7 @@ def _generate_video_thumbnail(source: Path, dest: Path, cfg: dict) -> Path | Non
             return None
 
         with Image.open(tmp_frame_path) as img:
-            img.thumbnail((max_size, max_size), Image.LANCZOS)
+            img = _fit_cover(img, max_size)
             if img.mode != "RGB":
                 img = img.convert("RGB")
 

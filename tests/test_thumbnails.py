@@ -59,3 +59,21 @@ def test_corrupt_file_returns_none(mock_config, mock_thumbdir, tmp_path):
     (tmp_path / "corrupt.png").write_bytes(b"not an image")
 
     assert get_or_create_thumbnail("abc123", tmp_path / "corrupt.png") is None
+
+
+@patch("memebase.thumbnails.THUMBNAILS_DIR")
+@patch("memebase.thumbnails.load_config")
+def test_tall_image_short_side_preserved(mock_config, mock_thumbdir, tmp_path):
+    mock_config.return_value = _thumb_config()
+    _mock_thumbdir(mock_thumbdir, tmp_path)
+
+    tall = tmp_path / "tall.png"
+    Image.new("RGB", (400, 4000), color=(0, 0, 255)).save(tall)
+
+    result = get_or_create_thumbnail("tall1", tall)
+    assert result is not None
+    with Image.open(result) as thumb:
+        w, h = thumb.size
+        # Short side (width) should stay at max_size, not be scaled down
+        assert w == 200
+        assert h == 2000
