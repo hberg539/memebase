@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.1](https://github.com/hberg539/memebase/compare/v0.4.0...v0.4.1) (2026-02-23)
+
+
+### Bug Fixes
+
+* **ui:** keep drop zone highlighted when dragging over child elements ([fa8d49b](https://github.com/hberg539/memebase/commit/fa8d49b9b78e0382f5fa5e73d9892a725aeab159))
+
+
+### Refactoring
+
+* extract shared dialog utilities into dialog.js ([4d7ef74](https://github.com/hberg539/memebase/commit/4d7ef74e0aa56853340d105fb663354042233a6d))
+* normalize log strings to key=value format with timestamps ([0454562](https://github.com/hberg539/memebase/commit/0454562691317678719890c373f7c271ac9af558))
+
+
+### Miscellaneous
+
+* auto-restart container unless explicitly stopped ([02064b7](https://github.com/hberg539/memebase/commit/02064b75b6ec649a6758be5f399ae3f94a5ac33c))
+* drop style commit type from changelog and pre-commit hook ([f2d0e90](https://github.com/hberg539/memebase/commit/f2d0e90877535363f9cc0e4d5c4cb6da96d9d81c))
+
 ## [0.4.0](https://github.com/hberg539/memebase/compare/v0.3.0...v0.4.0) (2026-02-23)
 
 
