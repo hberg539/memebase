@@ -1,4 +1,6 @@
 import logging
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 from flask import (
@@ -10,6 +12,7 @@ from flask import (
     send_from_directory,
 )
 
+from memebase.ai import analyze_meme
 from memebase.common import (
     ALLOWED_EXTENSIONS,
     CONTENT_TYPE_TO_EXT,
@@ -167,9 +170,6 @@ def upload_memes():
 
 @app.route("/api/memes/url", methods=["POST"])
 def upload_from_url():
-    import urllib.parse
-    import urllib.request
-
     data = request.get_json()
     url = (data or {}).get("url", "").strip()
     if not url:
@@ -281,8 +281,6 @@ def list_tags():
 
 @app.route("/api/memes/<uuid>/auto", methods=["POST"])
 def auto_describe(uuid):
-    from memebase.ai import analyze_meme
-
     with get_db() as conn:
         filename, path, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
         if reason == MemeError.NOT_IN_DB:
@@ -305,8 +303,6 @@ def auto_describe(uuid):
 
 @app.route("/api/memes/bulk/auto", methods=["POST"])
 def bulk_auto():
-    from memebase.ai import analyze_meme
-
     data = request.get_json()
     uuids = data.get("uuids", [])
     fields = data.get("fields", ["name", "description", "tags"])
