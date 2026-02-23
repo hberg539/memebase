@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.2](https://github.com/hberg539/memebase/compare/v0.5.1...v0.5.2) (2026-02-23)
+
+
+### Bug Fixes
+
+* **ui:** show filename in bulk auto-detect failure alerts ([98ee784](https://github.com/hberg539/memebase/commit/98ee78486728d63746bd4977bb8deafa864819a2))
+
+
+### Documentation
+
+* add AI auto-detect usage info to README ([b7a96d9](https://github.com/hberg539/memebase/commit/b7a96d9243ecd8baf63271d832004baca408f145))
+
 ## [0.5.1](https://github.com/hberg539/memebase/compare/v0.5.0...v0.5.1) (2026-02-23)
 
 
