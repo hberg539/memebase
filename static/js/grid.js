@@ -190,12 +190,12 @@ grid.addEventListener(
 	true,
 );
 
-paginationEl.addEventListener("click", (e) => {
+paginationEl.addEventListener("click", async (e) => {
 	const btn = e.target.closest(".page-btn");
 	if (!btn || btn.disabled) return;
 	currentPage = Number.parseInt(btn.dataset.page);
 	prevUuids = new Set();
-	load(search.value);
+	await load(search.value);
 	window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
