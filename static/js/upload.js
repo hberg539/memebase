@@ -26,7 +26,9 @@ dropZone.addEventListener("dragover", (e) => {
 });
 dropZone.addEventListener("dragleave", (e) => {
 	e.preventDefault();
-	dropZone.classList.remove("drag-over");
+	if (!dropZone.contains(e.relatedTarget)) {
+		dropZone.classList.remove("drag-over");
+	}
 });
 dropZone.addEventListener("drop", (e) => {
 	e.preventDefault();
