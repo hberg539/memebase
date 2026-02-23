@@ -13,6 +13,14 @@
 		{ "type": "chore", "section": "Miscellaneous" }
 	],
 	"packages": {
-		".": {}
+		".": {
+			"extra-files": [
+				{
+					"type": "toml",
+					"path": "uv.lock",
+					"jsonpath": "$.package[?(@.name.value=='memebase')].version"
+				}
+			]
+		}
 	}
 }
