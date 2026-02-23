@@ -74,4 +74,4 @@ class TestRegisterMeme:
         meme2, is_dup2 = register_meme(conn, str(f2))
         assert is_dup2
         assert meme2["uuid"] == meme1["uuid"]
-        assert not f2.exists()  # duplicate file should be removed
+        assert f2.exists()

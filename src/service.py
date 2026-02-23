@@ -28,7 +28,6 @@ def register_meme(conn: sqlite3.Connection, file_path: str) -> tuple[dict[str, A
     h = file_hash(file_path)
     existing_uuid = find_by_sha256(conn, h)
     if existing_uuid:
-        os.remove(file_path)
         return get_meme(conn, existing_uuid), True
 
     new_uuid = str(uuid_mod.uuid4())
