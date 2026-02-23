@@ -1,9 +1,9 @@
 import sqlite3
 import uuid as uuid_mod
 from pathlib import Path
-from typing import Any
 
 from memebase.db import find_by_sha256, get_meme, get_meme_filename, insert_meme
+from memebase.schemas import Meme
 from memebase.util import file_hash
 
 
@@ -20,7 +20,7 @@ def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:
     return dest, basename
 
 
-def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[dict[str, Any], bool]:
+def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool]:
     """Hash file, check for duplicate, insert or return existing.
 
     Returns (meme_dict, is_duplicate).

@@ -4,6 +4,7 @@ from typing import Any
 from flask import Flask, g
 
 from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS
+from memebase.schemas import Meme
 from memebase.util import normalize_tags
 
 
@@ -63,7 +64,7 @@ def init_db() -> None:
 # ---------------------------------------------------------------------------
 
 
-def get_meme(conn: sqlite3.Connection, uuid: str) -> dict[str, Any] | None:
+def get_meme(conn: sqlite3.Connection, uuid: str) -> Meme | None:
     """Get a meme dict with tags by uuid, or None if not found."""
     row = conn.execute(
         "SELECT uuid, sha256, size, filename, description, copy_count, favorite, created_at "
