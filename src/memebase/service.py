@@ -119,10 +119,8 @@ def apply_ai_suggestions(
         orig_ext = Path(filename).suffix
         new_filename = sanitize_filename(suggestion["name"].strip() + orig_ext)
         new_path = memes_dir / new_filename
-        if not new_path.exists() or new_filename == filename:
-            old_path = memes_dir / filename
-            if new_filename != filename:
-                old_path.rename(new_path)
+        if new_filename != filename and not new_path.exists():
+            (memes_dir / filename).rename(new_path)
             update_filename(conn, uuid, new_filename)
 
     if "description" in fields and suggestion.get("description"):
