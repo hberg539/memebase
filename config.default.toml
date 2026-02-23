@@ -1,7 +1,7 @@
 [grid]
 layout = "grid"  # "grid" or "masonry"
 thumbnail_size = 220  # card width in pixels
-page_size = 50
+per_page = "auto"  # number or "auto" to fill viewport
 
 [ai]
 enabled = false

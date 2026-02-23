@@ -16,7 +16,7 @@ _DEFAULTS: dict[str, Any] = {
     "grid": {
         "layout": "grid",
         "thumbnail_size": 220,
-        "page_size": 50,
+        "per_page": "auto",
     },
     "ai": {
         "enabled": False,

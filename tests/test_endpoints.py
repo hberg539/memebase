@@ -26,7 +26,7 @@ FAKE_AI_CFG = {
         "parallel": 3,
         "prompt": "Describe this meme. Tags: {tags}",
     },
-    "grid": {"layout": "grid", "thumbnail_size": 220, "page_size": 50},
+    "grid": {"layout": "grid", "thumbnail_size": 220, "per_page": "auto"},
 }
 
 

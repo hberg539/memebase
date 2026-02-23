@@ -13,6 +13,31 @@ let activeFavFilter = false;
 let currentPage = 1;
 let totalMemes = 0;
 
+/* -- Per-page calculation -- */
+
+let cachedPerPage = null;
+function getPerPage() {
+	if (cachedPerPage !== null) return cachedPerPage;
+	const cfg = window.GRID_PER_PAGE;
+	if (typeof cfg === "number" && cfg > 0) {
+		cachedPerPage = cfg;
+		return cachedPerPage;
+	}
+	const style = getComputedStyle(grid);
+	const thumbSize =
+		Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--thumb-size")) ||
+		220;
+	const gap = Number.parseFloat(style.columnGap) || 16;
+	const contentWidth =
+		grid.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight);
+	const cols = Math.max(1, Math.floor((contentWidth + gap) / (thumbSize + gap)));
+	const gridTop = grid.getBoundingClientRect().top;
+	const availableHeight = window.innerHeight - gridTop;
+	const rows = Math.max(1, Math.ceil((availableHeight + gap) / (thumbSize + gap)));
+	cachedPerPage = cols * rows;
+	return cachedPerPage;
+}
+
 /* -- Card template -- */
 
 function buildCardHtml(m, isNew) {
@@ -47,6 +72,7 @@ async function load(q = "") {
 	if (q) params.set("q", q);
 	params.set("sort", sortSel.value);
 	params.set("page", currentPage);
+	params.set("per_page", getPerPage());
 	if (activeExtFilter) params.set("ext", activeExtFilter);
 	for (const t of activeTagFilters) params.append("tag", t);
 	if (activeFavFilter) params.set("fav", "1");
@@ -104,7 +130,7 @@ function renderGrid() {
 /* -- Pagination -- */
 
 function renderPagination() {
-	const pageSize = window.GRID_PAGE_SIZE || 50;
+	const pageSize = getPerPage();
 	const totalPages = Math.max(1, Math.ceil(totalMemes / pageSize));
 
 	const maxVisible = 7;

@@ -74,7 +74,7 @@ def index():
         version=VERSION,
         grid_layout=cfg["grid"]["layout"],
         grid_thumbnail_size=cfg["grid"]["thumbnail_size"],
-        grid_page_size=cfg["grid"]["page_size"],
+        grid_per_page=cfg["grid"]["per_page"],
         ai_parallel=cfg["ai"]["parallel"],
         ai_enabled=cfg["ai"]["enabled"],
     )
@@ -99,7 +99,11 @@ def serve_meme(uuid, filename):
 @app.route("/api/memes")
 def list_memes():
     cfg = load_config()
-    page_size = cfg["grid"]["page_size"]
+    try:
+        per_page = int(request.args.get("per_page", cfg["grid"]["per_page"]))
+    except (ValueError, TypeError):
+        per_page = 50
+    per_page = max(1, per_page)
 
     q = request.args.get("q", "").strip()
     try:
@@ -116,7 +120,7 @@ def list_memes():
             conn,
             q=q,
             page=page,
-            page_size=page_size,
+            page_size=per_page,
             ext_filter=ext_filter,
             tag_filters=tag_filters,
             fav_filter=fav_filter,
@@ -128,7 +132,7 @@ def list_memes():
             "memes": result["memes"],
             "total": result["total"],
             "page": page,
-            "page_size": page_size,
+            "per_page": per_page,
             "filters": result["filters"],
         }
     )

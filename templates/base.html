@@ -10,7 +10,7 @@
 </head>
 <body>
 {% block content %}{% endblock %}
-<script>window.AI_PARALLEL = {{ ai_parallel }};window.GRID_PAGE_SIZE = {{ grid_page_size }};window.AI_ENABLED = {{ ai_enabled | tojson }};</script>
+<script>window.AI_PARALLEL = {{ ai_parallel }};window.GRID_PER_PAGE = {{ grid_per_page | tojson }};window.AI_ENABLED = {{ ai_enabled | tojson }};</script>
 <script src="https://unpkg.com/lucide@0.575.0/dist/umd/lucide.min.js"></script>
 <script src="{{ url_for('static', filename='js/api.js') }}"></script>
 <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>

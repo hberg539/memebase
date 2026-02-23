@@ -67,7 +67,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 |-----|---------|--------------|
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
-| `grid.page_size` | `50` | Memes per page |
+| `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |

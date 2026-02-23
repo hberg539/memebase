@@ -10,7 +10,7 @@ class MemeError(StrEnum):
 class GridConfig(TypedDict):
     layout: str
     thumbnail_size: int
-    page_size: int
+    per_page: str | int
 
 
 class AiConfig(TypedDict):
