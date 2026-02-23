@@ -20,12 +20,16 @@ docker-compose up          # Run with Docker
 **Backend (Python/Flask) - `src/`:**
 - `src/common.py` - Shared constants (paths, allowed extensions, content-type map, sort options)
 - `src/app.py` - Flask routes and all API endpoints
+- `src/service.py` - Business logic extracted from routes (file collision handling, meme registration, file path lookup)
 - `src/ai.py` - AI integration via LiteLLM for meme analysis (returns name/description/tags as JSON)
 - `src/db.py` - SQLite database layer (schema, queries, all SQL)
-- `src/util.py` - Shared utilities (filename sanitization, file hashing, config loading)
+- `src/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
 **Tests - `tests/`:**
 - `tests/test_sanitize.py` - Filename sanitization tests
+- `tests/test_db.py` - Tag normalization tests
+- `tests/test_ai.py` - Prompt building and AI response parsing tests
+- `tests/test_service.py` - Service layer tests (path resolution, meme registration)
 
 **Frontend (vanilla JS, no build):**
 - `static/js/grid.js` - Grid rendering, search (300ms debounce), faceted filtering, pagination
@@ -47,7 +51,13 @@ docker-compose up          # Run with Docker
 
 Two tables: `memes` (uuid PK, sha256 UNIQUE, size, filename, description, copy_count, favorite, timestamps) and `tags` (uuid + tag compound PK, cascading delete from memes).
 
+## CI
+
+GitHub Actions runs `uv run pytest` on every push and PR (`.github/workflows/test.yml`).
+
 ## Rules
+
+- Never commit or push without being explicitly asked to.
 
 - When features, configuration, or usage changes, update `README.md` accordingly.
 - `README.md` is user-facing - write it in a laid-back, casual tone. The audience is end-users and shitposters, not enterprise architects. Keep it fun and approachable.
