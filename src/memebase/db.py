@@ -1,10 +1,12 @@
 import sqlite3
 from typing import Any
 
+from flask import Flask, g
+
 from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS
 
 
-def get_db() -> sqlite3.Connection:
+def _connect_db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -12,9 +14,27 @@ def get_db() -> sqlite3.Connection:
     return conn
 
 
+def get_db() -> sqlite3.Connection:
+    """Return the per-request database connection, creating it on first call."""
+    if "db" not in g:
+        g.db = _connect_db()
+    return g.db
+
+
+def _close_db(exc: BaseException | None = None) -> None:
+    conn = g.pop("db", None)
+    if conn is not None:
+        conn.close()
+
+
+def init_app(app: Flask) -> None:
+    """Register the database teardown hook on the Flask app."""
+    app.teardown_appcontext(_close_db)
+
+
 def init_db() -> None:
     MEMES_DIR.mkdir(parents=True, exist_ok=True)
-    with get_db() as conn:
+    with _connect_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS memes (
                 uuid        TEXT PRIMARY KEY,

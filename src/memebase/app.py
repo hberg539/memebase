@@ -18,6 +18,7 @@ from memebase.common import (
 )
 from memebase.db import (
     get_db,
+    init_app,
     get_meme,
     get_meme_for_serving,
     update_favorite,
@@ -54,6 +55,7 @@ app = Flask(
     template_folder=str(ROOT_DIR / "templates"),
     static_folder=str(ROOT_DIR / "static"),
 )
+init_app(app)
 
 
 @app.errorhandler(Exception)
