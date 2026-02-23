@@ -290,9 +290,10 @@ def auto_describe(uuid):
 
         tags = get_all_tags(conn)
 
+    cfg = load_config()["ai"]
     log.info("Auto-detect started: %s (%s)", filename, uuid)
     try:
-        result = analyze_meme(path, tags)
+        result = analyze_meme(path, tags, model=cfg["model"], prompt_template=cfg["prompt"])
     except Exception as e:
         log.error("Auto-detect failed: %s (%s): %s", filename, uuid, e)
         return jsonify({"error": str(e)}), 500
@@ -309,6 +310,7 @@ def bulk_auto():
     if not uuids:
         return jsonify({"error": "No uuids provided"}), 400
 
+    cfg = load_config()["ai"]
     log.info("Bulk auto-detect started: %d memes, fields=%s", len(uuids), fields)
     with get_db() as conn:
         all_tags = get_all_tags(conn)
@@ -319,7 +321,9 @@ def bulk_auto():
                 continue
 
             try:
-                suggestion = analyze_meme(path, all_tags)
+                suggestion = analyze_meme(
+                    path, all_tags, model=cfg["model"], prompt_template=cfg["prompt"]
+                )
             except Exception as e:
                 log.error("Bulk auto-detect failed: %s (%s): %s", filename, u, e)
                 results[u] = {"error": str(e)}

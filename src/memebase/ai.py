@@ -7,8 +7,6 @@ from typing import Any
 
 import litellm
 
-from memebase.config import load_config
-
 log = logging.getLogger(__name__)
 
 
@@ -34,10 +32,10 @@ def parse_ai_response(raw_text: str) -> dict[str, Any]:
     return json.loads(stripped)
 
 
-def analyze_meme(image_path: str, existing_tags: list[str]) -> dict[str, Any]:
-    cfg = load_config()["ai"]
-    prompt = build_prompt(cfg["prompt"], existing_tags)
-    model = cfg["model"]
+def analyze_meme(
+    image_path: str, existing_tags: list[str], *, model: str, prompt_template: str
+) -> dict[str, Any]:
+    prompt = build_prompt(prompt_template, existing_tags)
 
     mime, image_data = encode_image(image_path)
 
