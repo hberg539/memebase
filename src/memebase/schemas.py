@@ -1,4 +1,10 @@
+from enum import StrEnum
 from typing import NotRequired, TypedDict
+
+
+class MemeError(StrEnum):
+    NOT_IN_DB = "not_in_db"
+    NOT_ON_DISK = "not_on_disk"
 
 
 class Meme(TypedDict):

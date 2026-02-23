@@ -34,6 +34,7 @@ from memebase.db import (
     update_favorite,
     update_filename,
 )
+from memebase.schemas import MemeError
 from memebase.service import get_meme_file_path, register_meme, resolve_unique_path
 from memebase.util import sanitize_filename
 
@@ -227,7 +228,7 @@ def upload_from_url():
 def update_meme_route(uuid):
     with get_db() as conn:
         filename, _, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
-        if reason == "not_in_db":
+        if reason == MemeError.NOT_IN_DB:
             return jsonify({"error": "Not found"}), 404
 
         data = request.get_json()
@@ -284,9 +285,9 @@ def auto_describe(uuid):
 
     with get_db() as conn:
         filename, path, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
-        if reason == "not_in_db":
+        if reason == MemeError.NOT_IN_DB:
             return jsonify({"error": "Not found"}), 404
-        if reason == "not_on_disk":
+        if reason == MemeError.NOT_ON_DISK:
             return jsonify({"error": "File not found on disk"}), 404
 
         tags = get_all_tags(conn)

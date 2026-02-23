@@ -3,7 +3,7 @@ import uuid as uuid_mod
 from pathlib import Path
 
 from memebase.db import find_by_sha256, get_meme, get_meme_filename, insert_meme
-from memebase.schemas import Meme
+from memebase.schemas import Meme, MemeError
 from memebase.util import file_hash
 
 
@@ -47,8 +47,8 @@ def get_meme_file_path(
     """
     filename = get_meme_filename(conn, uuid)
     if not filename:
-        return None, None, "not_in_db"
+        return None, None, MemeError.NOT_IN_DB
     path = memes_dir / filename
     if not path.exists():
-        return filename, path, "not_on_disk"
+        return filename, path, MemeError.NOT_ON_DISK
     return filename, path, None
