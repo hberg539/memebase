@@ -64,4 +64,4 @@ def test_defaults_not_mutated():
     """Calling _deep_merge doesn't modify the _DEFAULTS dict."""
     snapshot = copy.deepcopy(_DEFAULTS)
     _deep_merge(_DEFAULTS, {"grid": {"page_size": 999}, "ai": {"enabled": True}})
-    assert _DEFAULTS == snapshot
+    assert snapshot == _DEFAULTS

@@ -250,7 +250,7 @@ def query_memes(
     all_tags_rows = conn.execute(
         f"""SELECT t.tag, COUNT(DISTINCT m.uuid) as c
             FROM memes m JOIN tags t ON m.uuid = t.uuid
-            {_build_where(["1=1"] + search_parts)}
+            {_build_where(["1=1", *search_parts])}
             GROUP BY t.tag ORDER BY t.tag""",
         search_params,
     ).fetchall()
@@ -274,7 +274,7 @@ def query_memes(
     # Tag counts (search + ext + fav + active tags)
     tag_facet_parts = search_parts + ext_parts + tag_parts + fav_parts
     tag_facet_params = search_params + ext_params + tag_params
-    tag_facet_where = _build_where(["1=1"] + tag_facet_parts)
+    tag_facet_where = _build_where(["1=1", *tag_facet_parts])
     tag_rows = conn.execute(
         f"""SELECT t.tag, COUNT(DISTINCT m.uuid) as c
             FROM memes m JOIN tags t ON m.uuid = t.uuid
@@ -298,7 +298,7 @@ def query_memes(
     offset = (page - 1) * page_size
     rows = conn.execute(
         f"SELECT m.uuid FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
-        all_params + [page_size, offset],
+        [*all_params, page_size, offset],
     ).fetchall()
 
     memes = [get_meme(conn, row["uuid"]) for row in rows]

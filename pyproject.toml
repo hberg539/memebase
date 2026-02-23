@@ -12,7 +12,40 @@ dev = [
 ]
 
 [tool.ruff]
+target-version = "py310"
 line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "F",      # Pyflakes — unused imports, undefined names
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "I",      # isort — import sorting (auto-fixed)
+    "UP",     # pyupgrade — modern Python syntax (auto-fixed)
+    "B",      # flake8-bugbear — common bug patterns
+    "SIM",    # flake8-simplify — simplifiable constructs
+    "RUF",    # Ruff-specific rules
+    "A",      # flake8-builtins — prevent shadowing builtins
+    "C4",     # flake8-comprehensions — cleaner comprehensions (auto-fixed)
+    "PIE",    # flake8-pie — misc useful lints
+    "PT",     # flake8-pytest-style — pytest best practices
+    "T20",    # flake8-print — catch stray print() calls
+    "PERF",   # Perflint — performance anti-patterns
+]
+ignore = [
+    "E501",    # line length handled by ruff-format
+    "SIM108",  # ternary operator — explicit if/else often clearer
+    "PERF203", # try-except in loop — intentional for partial-failure tolerance
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "B017",   # pytest.raises(Exception) without match — intentional
+    "PT011",  # pytest.raises too broad — same rationale
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["memebase"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

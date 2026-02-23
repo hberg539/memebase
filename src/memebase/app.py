@@ -3,37 +3,38 @@ from pathlib import Path
 
 from flask import (
     Flask,
-    render_template,
-    send_from_directory,
-    request,
     jsonify,
     make_response,
+    render_template,
+    request,
+    send_from_directory,
 )
+
 from memebase.common import (
-    ROOT_DIR,
-    MEMES_DIR,
     ALLOWED_EXTENSIONS,
     CONTENT_TYPE_TO_EXT,
+    MEMES_DIR,
+    ROOT_DIR,
     USER_AGENT,
 )
+from memebase.config import load_config
 from memebase.db import (
+    add_tags,
+    delete_meme_row,
+    get_all_tags,
     get_db,
-    init_app,
     get_meme,
     get_meme_for_serving,
-    update_favorite,
-    update_description,
-    update_filename,
-    set_tags,
-    add_tags,
-    remove_tags,
-    get_all_tags,
     increment_copy_count,
-    delete_meme_row,
+    init_app,
     query_memes,
+    remove_tags,
+    set_tags,
+    update_description,
+    update_favorite,
+    update_filename,
 )
-from memebase.service import resolve_unique_path, register_meme, get_meme_file_path
-from memebase.config import load_config
+from memebase.service import get_meme_file_path, register_meme, resolve_unique_path
 from memebase.util import sanitize_filename
 
 try:
@@ -165,8 +166,8 @@ def upload_memes():
 
 @app.route("/api/memes/url", methods=["POST"])
 def upload_from_url():
-    import urllib.request
     import urllib.parse
+    import urllib.request
 
     data = request.get_json()
     url = (data or {}).get("url", "").strip()

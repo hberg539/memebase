@@ -1,6 +1,6 @@
 import sqlite3
 
-from memebase.service import resolve_unique_path, register_meme
+from memebase.service import register_meme, resolve_unique_path
 
 
 class TestResolveUniquePath:
@@ -19,7 +19,7 @@ class TestResolveUniquePath:
         (tmp_path / "hello.png").write_bytes(b"x")
         (tmp_path / "hello_1.png").write_bytes(b"x")
         (tmp_path / "hello_2.png").write_bytes(b"x")
-        dest, basename = resolve_unique_path(tmp_path, "hello.png")
+        _dest, basename = resolve_unique_path(tmp_path, "hello.png")
         assert basename == "hello_3.png"
 
 
