@@ -28,13 +28,15 @@ function buildCardHtml(m, isNew) {
       <button class="btn-fav${m.favorite ? " active" : ""}" title="Favorite">${icon(m.favorite ? "heart" : "heart", 18)}</button>
       <button class="btn-copy" data-src="${src}" data-filename="${esc(m.filename)}">${icon(canCopy(m.filename) ? "clipboard" : "download", 18)}</button>
       ${media}
-      <div class="name">${(() => {
-				const d = m.filename.lastIndexOf(".");
-				return d > 0
-					? `<span class="name-base">${esc(m.filename.slice(0, d))}</span>${esc(m.filename.slice(d))}`
-					: esc(m.filename);
-			})()}</div>
-      ${tags}
+      <div class="card-overlay">
+        ${tags}
+        <div class="name">${(() => {
+					const d = m.filename.lastIndexOf(".");
+					return d > 0
+						? `<span class="name-base">${esc(m.filename.slice(0, d))}</span>${esc(m.filename.slice(d))}`
+						: esc(m.filename);
+				})()}</div>
+      </div>
     </div>`;
 }
 

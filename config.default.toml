@@ -1,5 +1,5 @@
 [grid]
-thumbnail_size = 200  # card width in pixels
+thumbnail_size = 220  # card width in pixels
 page_size = 50
 
 [ai]

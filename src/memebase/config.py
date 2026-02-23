@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 _DEFAULTS: dict[str, Any] = {
     "grid": {
-        "thumbnail_size": 200,
+        "thumbnail_size": 220,
         "page_size": 50,
     },
     "ai": {

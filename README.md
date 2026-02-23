@@ -65,7 +65,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 
 | Key | Default | What it does |
 |-----|---------|--------------|
-| `grid.thumbnail_size` | `200` | Card width in pixels |
+| `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.page_size` | `50` | Memes per page |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |

@@ -166,10 +166,22 @@ header select {
 .btn-copy.copied {
 	background: rgba(16, 185, 129, 0.8);
 }
+.card-overlay {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+	padding: 1.5rem 0.75rem 0.5rem;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+.card:hover .card-overlay {
+	opacity: 1;
+}
 .card .name {
-	padding: 0.5rem 0.75rem;
 	font-size: 0.8rem;
-	color: #aaa;
+	color: #eee;
 	display: flex;
 	white-space: nowrap;
 }
@@ -178,7 +190,7 @@ header select {
 	text-overflow: ellipsis;
 }
 .card .card-tags {
-	padding: 0 0.75rem 0.5rem;
+	padding-bottom: 0.25rem;
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.25rem;
