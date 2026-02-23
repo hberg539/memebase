@@ -60,6 +60,6 @@ def analyze_meme(
     )
 
     raw = response.choices[0].message.content
-    log.info("AI raw response: %s", raw)
+    log.debug("ai response: model=%s length=%d body=%s", model, len(raw), raw)
 
     return parse_ai_response(raw)

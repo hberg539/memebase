@@ -50,7 +50,7 @@ def load_config() -> AppConfig:
         return _cached
     if not CONFIG_PATH.exists():
         shutil.copy2(CONFIG_DEFAULT, CONFIG_PATH)
-        log.info("Copied default config to %s", CONFIG_PATH)
+        log.info("default config created: path=%s", CONFIG_PATH)
     with open(CONFIG_PATH, "rb") as f:
         user_cfg = tomllib.load(f)
     _cached = _deep_merge(_DEFAULTS, user_cfg)

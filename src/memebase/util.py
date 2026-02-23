@@ -1,9 +1,6 @@
 import hashlib
-import logging
 import re
 import unicodedata
-
-log = logging.getLogger(__name__)
 
 # Characters forbidden on Windows (and generally problematic)
 _RESERVED_CHARS = re.compile(r'[<>:"/\\|?*#%\x00-\x1f]')

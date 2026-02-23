@@ -39,7 +39,11 @@ from memebase.service import (
 )
 from memebase.util import sanitize_filename
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 log = logging.getLogger(__name__)
 
 VERSION = load_version()
@@ -56,7 +60,7 @@ init_app(app)
 def handle_exception(e):
     """Return JSON for any uncaught exception on API routes."""
     if request.path.startswith("/api/"):
-        log.exception("Unhandled error on %s %s", request.method, request.path)
+        log.exception("unhandled error: method=%s path=%s", request.method, request.path)
         status = getattr(e, "code", 500)
         return jsonify({"error": str(e) or "Internal server error"}), status
     raise e
@@ -149,9 +153,11 @@ def upload_memes():
             meme, is_dup = register_meme(conn, dest)
             if is_dup:
                 meme["duplicate"] = True
-                log.info("Upload skipped (duplicate): %s -> %s", basename, meme["uuid"])
+                log.info("upload skipped (duplicate): filename=%s uuid=%s", basename, meme["uuid"])
             else:
-                log.info("Uploaded: %s (%s, %d bytes)", basename, meme["uuid"], meme["size"])
+                log.info(
+                    "upload: filename=%s uuid=%s size=%d", basename, meme["uuid"], meme["size"]
+                )
             results.append(meme)
 
     return jsonify(results), 201
@@ -176,10 +182,14 @@ def upload_from_url():
     with get_db() as conn:
         meme, is_dup = register_meme(conn, dest)
         if is_dup:
-            log.info("URL upload skipped (duplicate): %s -> %s", url, meme["uuid"])
+            log.info("url upload skipped (duplicate): url=%s uuid=%s", url, meme["uuid"])
             return jsonify(meme), 200
         log.info(
-            "Uploaded from URL: %s -> %s (%s, %d bytes)", url, basename, meme["uuid"], meme["size"]
+            "url upload: url=%s filename=%s uuid=%s size=%d",
+            url,
+            basename,
+            meme["uuid"],
+            meme["size"],
         )
         return jsonify(meme), 201
 
@@ -197,13 +207,18 @@ def update_meme_route(uuid):
         favorite = data.get("favorite")
         if favorite is not None:
             update_favorite(conn, uuid, favorite)
-            log.info("Favorite %s: %s", "set" if favorite else "unset", uuid)
+            log.info("favorite updated: uuid=%s filename=%s favorite=%s", uuid, filename, favorite)
 
         # Update description
         description = data.get("description")
         if description is not None:
             update_description(conn, uuid, description)
-            log.info("Description updated: %s", uuid)
+            log.info(
+                "description updated: uuid=%s filename=%s length=%d",
+                uuid,
+                filename,
+                len(description),
+            )
 
         # Rename (new_name is just the stem, extension stays)
         new_name_stem = data.get("new_name")
@@ -220,13 +235,13 @@ def update_meme_route(uuid):
                 old_path = MEMES_DIR / filename
                 old_path.rename(new_path)
                 update_filename(conn, uuid, new_filename)
-                log.info("Renamed: %s -> %s (%s)", filename, new_filename, uuid)
+                log.info("rename: uuid=%s old=%s new=%s", uuid, filename, new_filename)
 
         # Update tags
         tags = data.get("tags")
         if tags is not None:
             set_tags(conn, uuid, tags)
-            log.info("Tags updated: %s -> %s", uuid, tags)
+            log.info("tags updated: uuid=%s filename=%s tags=%s", uuid, filename, tags)
 
         result = get_meme(conn, uuid)
     return jsonify(result)
@@ -251,14 +266,19 @@ def auto_describe(uuid):
         tags = get_all_tags(conn)
 
     cfg = load_config()["ai"]
-    log.info("Auto-detect started: %s (%s)", filename, uuid)
+    log.info("auto-detect started: uuid=%s filename=%s", uuid, filename)
     try:
         result = analyze_meme(path, tags, model=cfg["model"], prompt_template=cfg["prompt"])
     except Exception as e:
-        log.error("Auto-detect failed: %s (%s): %s", filename, uuid, e)
+        log.exception("auto-detect failed: uuid=%s filename=%s", uuid, filename)
         return jsonify({"error": str(e)}), 500
 
-    log.info("Auto-detect completed: %s (%s) -> %s", filename, uuid, result.get("name", "?"))
+    log.info(
+        "auto-detect completed: uuid=%s filename=%s suggested_name=%s",
+        uuid,
+        filename,
+        result.get("name", "?"),
+    )
     return jsonify(result)
 
 
@@ -271,7 +291,7 @@ def bulk_auto():
         return jsonify({"error": "No uuids provided"}), 400
 
     cfg = load_config()["ai"]
-    log.info("Bulk auto-detect started: %d memes, fields=%s", len(uuids), fields)
+    log.info("bulk auto-detect started: count=%d fields=%s", len(uuids), fields)
     with get_db() as conn:
         all_tags = get_all_tags(conn)
         results = {}
@@ -285,17 +305,17 @@ def bulk_auto():
                     path, all_tags, model=cfg["model"], prompt_template=cfg["prompt"]
                 )
             except Exception as e:
-                log.error("Bulk auto-detect failed: %s (%s): %s", filename, u, e)
+                log.error("bulk auto-detect failed: uuid=%s filename=%s error=%s", u, filename, e)
                 results[u] = {"error": str(e)}
                 continue
 
             apply_ai_suggestions(conn, u, filename, suggestion, fields, MEMES_DIR)
 
             results[u] = {"ok": True}
-            log.info("Bulk auto-detect completed: %s (%s)", filename, u)
+            log.debug("bulk auto-detect completed: uuid=%s filename=%s", u, filename)
 
     log.info(
-        "Bulk auto-detect finished: %d/%d succeeded",
+        "bulk auto-detect finished: succeeded=%d total=%d",
         sum(1 for r in results.values() if r.get("ok")),
         len(uuids),
     )
@@ -312,7 +332,7 @@ def bulk_update_tags():
         return jsonify({"error": "No uuids provided"}), 400
 
     log.info(
-        "Bulk tags: %d memes, add=%s, remove=%s",
+        "bulk tags updated: count=%d add=%s remove=%s",
         len(uuids),
         tags_to_add,
         tags_to_remove,
@@ -344,5 +364,5 @@ def delete_meme(uuid):
         path = MEMES_DIR / filename
         if path.exists():
             path.unlink()
-    log.info("Deleted: %s (%s)", filename, uuid)
+    log.info("delete: uuid=%s filename=%s", uuid, filename)
     return "", 204
