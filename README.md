@@ -124,6 +124,13 @@ services:
       - memebase.env
 ```
 
+### Usage
+
+When AI is enabled, an **Auto** button appears in two places:
+
+- **Meme popup** - click Auto to detect the name, description, and tags for a single meme.
+- **Bulk selection** - select multiple memes, then click Auto to run AI detection across all of them.
+
 ### Supported models
 
 Memebase uses [LiteLLM](https://docs.litellm.ai/) for model routing, so pretty much any vision model works:
