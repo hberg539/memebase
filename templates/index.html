@@ -2,7 +2,7 @@
 {% block content %}
 <div class="sticky-top">
 <header>
-  <h1 id="logo" style="cursor:pointer">Memebase{% if version %} <sup class="version-tag">v{{ version }}</sup>{% endif %}</h1>
+  <h1 id="logo" style="cursor:pointer">{{ title }}{% if version %} <sup class="version-tag">v{{ version }}</sup>{% endif %}</h1>
   <input type="search" id="search" placeholder="Search memes...">
   <button id="clear-all" disabled>Clear</button>
   <select id="sort">

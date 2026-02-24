@@ -96,6 +96,7 @@ def index():
     theme = _safe_theme_name(theme)
     return render_template(
         "index.html",
+        title=cfg["ui"]["title"],
         version=VERSION,
         theme=theme,
         grid_layout=cfg["grid"]["layout"],

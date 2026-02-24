@@ -35,6 +35,7 @@ class ServerConfig(TypedDict):
 
 
 class UiConfig(TypedDict):
+    title: str
     theme: str
 
 

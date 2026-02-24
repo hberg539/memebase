@@ -71,6 +71,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
+| `ui.title` | `"Memebase"` | Page title and header text |
 | `ui.theme` | `"midnight"` | CSS theme name (see [Themes](#themes)) |
 | `thumbnails.enabled` | `true` | Generate and serve smaller thumbnails in the grid view |
 | `thumbnails.max_size` | `440` | Max width/height in pixels (2x card size for retina) |

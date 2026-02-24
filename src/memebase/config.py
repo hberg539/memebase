@@ -24,6 +24,7 @@ _DEFAULTS: dict[str, Any] = {
         "per_page": "auto",
     },
     "ui": {
+        "title": "Memebase",
         "theme": "midnight",
     },
     "thumbnails": {

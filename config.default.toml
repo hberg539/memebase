@@ -9,6 +9,7 @@ thumbnail_size = 220  # card width in pixels
 per_page = "auto"     # number or "auto" to fill viewport
 
 [ui]
+title = "Memebase"
 theme = "midnight"
 
 [thumbnails]
