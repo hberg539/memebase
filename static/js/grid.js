@@ -14,6 +14,7 @@ const activeTagFilters = new Set();
 let activeFavFilter = false;
 let currentPage = 1;
 let totalMemes = 0;
+const SLIDING_PAGES = 5;
 
 /* -- Per-page calculation -- */
 
@@ -153,22 +154,18 @@ function renderPagination() {
 	const pageSize = getPerPage();
 	const totalPages = Math.max(1, Math.ceil(totalMemes / pageSize));
 
-	const maxVisible = 7;
 	const pages = [];
-	if (totalPages <= maxVisible) {
+	if (totalPages <= SLIDING_PAGES + 3) {
 		for (let i = 1; i <= totalPages; i++) pages.push(i);
 	} else {
-		pages.push(1);
-		let start = Math.max(2, currentPage - 1);
-		let end = Math.min(totalPages - 1, currentPage + 1);
-		if (currentPage <= 3) {
-			start = 2;
-			end = 4;
-		}
-		if (currentPage >= totalPages - 2) {
-			start = totalPages - 3;
+		const half = Math.floor(SLIDING_PAGES / 2);
+		let start = Math.max(2, currentPage - half);
+		let end = start + SLIDING_PAGES - 1;
+		if (end > totalPages - 1) {
 			end = totalPages - 1;
+			start = end - SLIDING_PAGES + 1;
 		}
+		pages.push(1);
 		if (start > 2) pages.push("...");
 		for (let i = start; i <= end; i++) pages.push(i);
 		if (end < totalPages - 1) pages.push("...");
