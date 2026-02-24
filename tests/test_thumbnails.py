@@ -30,7 +30,7 @@ def _mock_thumbdir(mock, tmp_path):
 
 
 @patch("memebase.thumbnails.THUMBNAILS_DIR")
-@patch("memebase.thumbnails.load_config")
+@patch("memebase.thumbnails.get_config")
 def test_disabled_and_skip_types_return_none(mock_config, mock_dir, tmp_path):
     mock_config.return_value = _thumb_config(enabled=False)
     assert get_or_create_thumbnail("abc", _make_test_image(tmp_path / "a.png")) is None
@@ -40,7 +40,7 @@ def test_disabled_and_skip_types_return_none(mock_config, mock_dir, tmp_path):
 
 
 @patch("memebase.thumbnails.THUMBNAILS_DIR")
-@patch("memebase.thumbnails.load_config")
+@patch("memebase.thumbnails.get_config")
 def test_generates_and_caches(mock_config, mock_thumbdir, tmp_path):
     mock_config.return_value = _thumb_config()
     _mock_thumbdir(mock_thumbdir, tmp_path)
@@ -52,7 +52,7 @@ def test_generates_and_caches(mock_config, mock_thumbdir, tmp_path):
 
 
 @patch("memebase.thumbnails.THUMBNAILS_DIR")
-@patch("memebase.thumbnails.load_config")
+@patch("memebase.thumbnails.get_config")
 def test_corrupt_file_returns_none(mock_config, mock_thumbdir, tmp_path):
     mock_config.return_value = _thumb_config()
     _mock_thumbdir(mock_thumbdir, tmp_path)
@@ -62,7 +62,7 @@ def test_corrupt_file_returns_none(mock_config, mock_thumbdir, tmp_path):
 
 
 @patch("memebase.thumbnails.THUMBNAILS_DIR")
-@patch("memebase.thumbnails.load_config")
+@patch("memebase.thumbnails.get_config")
 def test_tall_image_short_side_preserved(mock_config, mock_thumbdir, tmp_path):
     mock_config.return_value = _thumb_config()
     _mock_thumbdir(mock_thumbdir, tmp_path)

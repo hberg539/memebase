@@ -55,8 +55,8 @@ def _deep_merge(base: dict, override: dict) -> dict:
 _cached: AppConfig | None = None
 
 
-def load_config() -> AppConfig:
-    """Return the cached application config, loading from disk on first call.
+def get_config() -> AppConfig:
+    """Return the application config, loading from disk on first call.
 
     Copies the default config into the data directory if missing, then
     deep-merges the user config over built-in defaults so every expected

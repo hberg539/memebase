@@ -21,7 +21,7 @@ from memebase.common import (
     ROOT_DIR,
     THEMES_DIR,
 )
-from memebase.config import load_config, load_version
+from memebase.config import get_config, load_version
 from memebase.db import (
     add_tags,
     delete_meme_row,
@@ -67,7 +67,7 @@ app = Flask(
     template_folder=str(ROOT_DIR / "templates"),
     static_folder=str(ROOT_DIR / "static"),
 )
-_server_cfg = load_config()["server"]
+_server_cfg = get_config()["server"]
 if _server_cfg["max_upload_size"]:
     app.config["MAX_CONTENT_LENGTH"] = _server_cfg["max_upload_size"] * 1024 * 1024
 init_app(app)
@@ -86,7 +86,7 @@ def handle_exception(e):
 
 @app.route("/")
 def index():
-    cfg = load_config()
+    cfg = get_config()
     theme = request.args.get("theme", "").strip() or cfg["ui"]["theme"]
     theme = _safe_theme_name(theme)
     return render_template(
@@ -182,7 +182,7 @@ def serve_theme(name):
 
 @app.route("/api/memes")
 def list_memes():
-    cfg = load_config()
+    cfg = get_config()
     try:
         per_page = int(request.args.get("per_page", cfg["grid"]["per_page"]))
     except (ValueError, TypeError):
@@ -355,7 +355,7 @@ def auto_describe(uuid):
 
         tags = get_all_tags(conn)
 
-    cfg = load_config()["ai"]
+    cfg = get_config()["ai"]
     log.info("auto-detect started: uuid=%s filename=%s", uuid, filename)
     try:
         result = analyze_meme(path, tags, model=cfg["model"], prompt_template=cfg["prompt"])
@@ -380,7 +380,7 @@ def bulk_auto():
     if not uuids:
         return jsonify({"error": "No uuids provided"}), 400
 
-    cfg = load_config()["ai"]
+    cfg = get_config()["ai"]
     log.info("bulk auto-detect started: count=%d fields=%s", len(uuids), fields)
     with get_db() as conn:
         all_tags = get_all_tags(conn)

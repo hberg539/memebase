@@ -5,12 +5,12 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from memebase.app import app
 from memebase.common import CONFIG_PATH, DEBUG
-from memebase.config import load_config
+from memebase.config import get_config
 from memebase.db import init_db
 
 if __name__ == "__main__":
     init_db()
-    cfg = load_config()
+    cfg = get_config()
     app.run(
         host=cfg["server"]["host"],
         debug=DEBUG,

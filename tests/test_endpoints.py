@@ -298,7 +298,7 @@ class TestAutoDescribe:
                 return_value=("test.png", "/tmp/test.png", None),
             ),
             patch("memebase.app.get_all_tags", return_value=[]),
-            patch("memebase.app.load_config", return_value=FAKE_AI_CFG),
+            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.analyze_meme", side_effect=RuntimeError("AI broke")),
         ):
             resp = client.post("/api/memes/some-uuid/auto")
@@ -314,7 +314,7 @@ class TestAutoDescribe:
                 return_value=("test.png", "/tmp/test.png", None),
             ),
             patch("memebase.app.get_all_tags", return_value=["existing"]),
-            patch("memebase.app.load_config", return_value=FAKE_AI_CFG),
+            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.analyze_meme", return_value=suggestion),
         ):
             resp = client.post("/api/memes/some-uuid/auto")
@@ -330,7 +330,7 @@ class TestBulkAuto:
     def test_success(self, client):
         suggestion = {"name": "cat", "description": "a cat", "tags": ["cat"]}
         with (
-            patch("memebase.app.load_config", return_value=FAKE_AI_CFG),
+            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
@@ -347,7 +347,7 @@ class TestBulkAuto:
 
     def test_missing_uuid_skipped(self, client):
         with (
-            patch("memebase.app.load_config", return_value=FAKE_AI_CFG),
+            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
@@ -362,7 +362,7 @@ class TestBulkAuto:
     def test_partial_failure(self, client):
         ok_suggestion = {"name": "ok", "description": "ok", "tags": []}
         with (
-            patch("memebase.app.load_config", return_value=FAKE_AI_CFG),
+            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
