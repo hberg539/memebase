@@ -1,5 +1,6 @@
 import sqlite3
 
+from memebase.migrate import apply_migrations
 from memebase.service import register_meme, resolve_unique_path
 
 
@@ -28,26 +29,7 @@ class TestRegisterMeme:
         conn = sqlite3.connect(":memory:")
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("""
-            CREATE TABLE memes (
-                uuid TEXT PRIMARY KEY,
-                sha256 TEXT UNIQUE NOT NULL,
-                size INTEGER NOT NULL DEFAULT 0,
-                filename TEXT NOT NULL,
-                ext TEXT NOT NULL DEFAULT '',
-                description TEXT NOT NULL DEFAULT '',
-                favorite INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE tags (
-                uuid TEXT NOT NULL REFERENCES memes(uuid) ON DELETE CASCADE,
-                tag TEXT NOT NULL,
-                PRIMARY KEY (uuid, tag)
-            )
-        """)
+        apply_migrations(conn)
         return conn
 
     def test_new_file(self, tmp_path):

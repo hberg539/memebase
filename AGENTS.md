@@ -22,13 +22,16 @@ docker-compose up          # Run with Docker
 - `src/memebase/app.py` - Flask routes and all API endpoints
 - `src/memebase/service.py` - Business logic extracted from routes (file collision handling, meme registration, file path lookup)
 - `src/memebase/ai.py` - AI integration via LiteLLM for meme analysis (returns name/description/tags as JSON)
-- `src/memebase/db.py` - SQLite database layer (schema, queries, all SQL)
+- `src/memebase/db.py` - SQLite database layer (queries, all SQL)
+- `src/memebase/migrate.py` - Migration runner using `PRAGMA user_version` to apply versioned schema changes at startup
+- `src/memebase/migrations/` - Numbered migration modules (e.g. `0001_initial_schema.py`), each with a `migrate(conn)` function
 - `src/memebase/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
 **Tests - `tests/`:**
 - `tests/test_util.py` - Utility tests (filename sanitization, tag normalization)
 - `tests/test_ai.py` - Prompt building and AI response parsing tests
 - `tests/test_service.py` - Service layer tests (path resolution, meme registration)
+- `tests/test_migrate.py` - Migration system tests (fresh DB, idempotency)
 
 **Frontend (vanilla JS, no build):**
 - `static/js/grid.js` - Grid rendering, search (300ms debounce), faceted filtering, pagination
@@ -49,6 +52,12 @@ docker-compose up          # Run with Docker
 ## Database Schema
 
 Two tables: `memes` (uuid PK, sha256 UNIQUE, size, filename, description, favorite, timestamps) and `tags` (uuid + tag compound PK, cascading delete from memes).
+
+## Migrations
+
+Schema is managed by a lightweight migration system in `src/memebase/migrate.py`. SQLite's `PRAGMA user_version` tracks the current version. At startup, `db.init_db()` calls `apply_migrations(conn)` which discovers and applies any pending migration modules from `src/memebase/migrations/`.
+
+To add a new migration, create `src/memebase/migrations/NNNN_description.py` (where NNNN is the next version number) with a `migrate(conn: sqlite3.Connection) -> None` function. Use `IF NOT EXISTS` / `IF EXISTS` guards and additive changes only (new columns with defaults, new tables, new indexes).
 
 ## CI
 
