@@ -2,6 +2,7 @@ import hashlib
 import io
 import re
 import unicodedata
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -9,6 +10,11 @@ from PIL import Image, ImageDraw, ImageFont
 _RESERVED_CHARS = re.compile(r'[<>:"/\\|?*#%\x00-\x1f]')
 # Windows reserved device names
 _RESERVED_NAMES = re.compile(r"^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\.|$)", re.IGNORECASE)
+
+
+def parse_ext(filename: str) -> str:
+    """Extract dotless lowercase extension from a filename (e.g. 'photo.PNG' -> 'png')."""
+    return Path(filename).suffix.lstrip(".").lower()
 
 
 def sanitize_filename(name: str) -> str:

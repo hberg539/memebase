@@ -1,4 +1,4 @@
-from memebase.util import normalize_tags, sanitize_filename
+from memebase.util import normalize_tags, parse_ext, sanitize_filename
 
 
 def test_normal_filename():
@@ -82,6 +82,47 @@ def test_mixed_separators():
 def test_extension_preserved():
     assert sanitize_filename("my:file.webm") == "my_file.webm"
     assert sanitize_filename("test<>.mp4") == "test__.mp4"
+
+
+# ---------------------------------------------------------------------------
+# parse_ext
+# ---------------------------------------------------------------------------
+
+
+def test_parse_ext_basic():
+    assert parse_ext("photo.png") == "png"
+
+
+def test_parse_ext_uppercase():
+    assert parse_ext("photo.PNG") == "png"
+
+
+def test_parse_ext_mixed_case():
+    assert parse_ext("photo.JpEg") == "jpeg"
+
+
+def test_parse_ext_no_extension():
+    assert parse_ext("README") == ""
+
+
+def test_parse_ext_dotfile():
+    assert parse_ext(".gitignore") == ""
+
+
+def test_parse_ext_multiple_dots():
+    assert parse_ext("archive.tar.gz") == "gz"
+
+
+def test_parse_ext_trailing_dot():
+    assert parse_ext("file.") == ""
+
+
+def test_parse_ext_empty_string():
+    assert parse_ext("") == ""
+
+
+def test_parse_ext_path_like():
+    assert parse_ext("some/path/photo.WEBP") == "webp"
 
 
 # ---------------------------------------------------------------------------

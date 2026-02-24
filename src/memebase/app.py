@@ -47,7 +47,7 @@ from memebase.service import (
     resolve_unique_path,
 )
 from memebase.thumbnails import delete_thumbnails, get_or_create_thumbnail
-from memebase.util import generate_placeholder_image, sanitize_filename
+from memebase.util import generate_placeholder_image, parse_ext, sanitize_filename
 
 log = get_logger(__name__)
 
@@ -323,7 +323,7 @@ def update_meme_route(uuid):
 
                 old_path = MEMES_DIR / filename
                 old_path.rename(new_path)
-                ext = Path(new_filename).suffix.lstrip(".").lower()
+                ext = parse_ext(new_filename)
                 update_filename(conn, uuid, new_filename, ext)
                 log.info("rename: uuid=%s old=%s new=%s", uuid, filename, new_filename)
 

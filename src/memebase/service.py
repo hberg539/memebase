@@ -15,7 +15,7 @@ from memebase.db import (
     update_filename,
 )
 from memebase.schemas import AiSuggestion, Meme, MemeError
-from memebase.util import file_hash, sanitize_filename
+from memebase.util import file_hash, parse_ext, sanitize_filename
 
 
 def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:
@@ -44,7 +44,7 @@ def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool
     new_uuid = str(uuid_mod.uuid4())
     file_size = file_path.stat().st_size
     basename = file_path.name
-    ext = Path(basename).suffix.lstrip(".").lower()
+    ext = parse_ext(basename)
     insert_meme(conn, new_uuid, h, file_size, basename, ext)
     return get_meme(conn, new_uuid), False
 
@@ -122,7 +122,7 @@ def apply_ai_suggestions(
         new_path = memes_dir / new_filename
         if new_filename != filename and not new_path.exists():
             (memes_dir / filename).rename(new_path)
-            ext = Path(new_filename).suffix.lstrip(".").lower()
+            ext = parse_ext(new_filename)
             update_filename(conn, uuid, new_filename, ext)
 
     if "description" in fields and suggestion.get("description"):
