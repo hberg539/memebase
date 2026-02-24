@@ -6,7 +6,6 @@ from pathlib import Path
 from PIL import Image
 
 from memebase.common import THUMBNAILS_DIR
-from memebase.config import get_config
 from memebase.log import get_logger
 
 log = get_logger(__name__)
@@ -124,9 +123,8 @@ def delete_thumbnails(uuid: str) -> None:
         log.info("removed thumbnail: %s", path.name)
 
 
-def get_or_create_thumbnail(uuid: str, source_path: Path) -> Path | None:
+def get_or_create_thumbnail(uuid: str, source_path: Path, cfg: dict) -> Path | None:
     """Return cached or freshly generated thumbnail path, or None on failure."""
-    cfg = get_config()["thumbnails"]
     if not cfg["enabled"]:
         return None
 

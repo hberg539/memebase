@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from memebase.app import app
+from memebase.app import create_app
 from memebase.common import CONFIG_PATH, DEBUG
 from memebase.config import get_config
 from memebase.db import init_db
@@ -11,6 +11,7 @@ from memebase.db import init_db
 if __name__ == "__main__":
     init_db()
     cfg = get_config()
+    app = create_app(cfg)
     app.run(
         host=cfg["server"]["host"],
         debug=DEBUG,

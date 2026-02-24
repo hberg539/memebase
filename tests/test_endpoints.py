@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from memebase.app import app
+from memebase.app import create_app
 from memebase.schemas import MemeError
 
 FAKE_MEME = {
@@ -20,25 +20,31 @@ FAKE_MEME = {
     "tags": [],
 }
 
-FAKE_AI_CFG = {
+TEST_CONFIG = {
+    "server": {"host": "0.0.0.0", "port": 5000, "max_upload_size": 100},
+    "grid": {"layout": "grid", "thumbnail_size": 220, "per_page": "auto"},
+    "ui": {"title": "Memebase", "theme": "midnight"},
+    "thumbnails": {
+        "enabled": True,
+        "max_size": 440,
+        "quality": 80,
+        "format": "webp",
+        "skip_types": ["gif"],
+    },
     "ai": {
         "enabled": True,
         "model": "gpt-4o",
         "parallel": 3,
         "prompt": "Describe this meme. Tags: {tags}",
     },
-    "grid": {"layout": "grid", "thumbnail_size": 220, "per_page": "auto"},
 }
 
 
 @pytest.fixture
 def client():
-    import memebase.config
-
-    memebase.config._cached = None
+    app = create_app(config=TEST_CONFIG)
     app.config["TESTING"] = True
-    yield app.test_client()
-    memebase.config._cached = None
+    return app.test_client()
 
 
 class TestUploadMemes:
@@ -298,7 +304,6 @@ class TestAutoDescribe:
                 return_value=("test.png", "/tmp/test.png", None),
             ),
             patch("memebase.app.get_all_tags", return_value=[]),
-            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.analyze_meme", side_effect=RuntimeError("AI broke")),
         ):
             resp = client.post("/api/memes/some-uuid/auto")
@@ -314,7 +319,6 @@ class TestAutoDescribe:
                 return_value=("test.png", "/tmp/test.png", None),
             ),
             patch("memebase.app.get_all_tags", return_value=["existing"]),
-            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.analyze_meme", return_value=suggestion),
         ):
             resp = client.post("/api/memes/some-uuid/auto")
@@ -330,7 +334,6 @@ class TestBulkAuto:
     def test_success(self, client):
         suggestion = {"name": "cat", "description": "a cat", "tags": ["cat"]}
         with (
-            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
@@ -347,7 +350,6 @@ class TestBulkAuto:
 
     def test_missing_uuid_skipped(self, client):
         with (
-            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
@@ -362,7 +364,6 @@ class TestBulkAuto:
     def test_partial_failure(self, client):
         ok_suggestion = {"name": "ok", "description": "ok", "tags": []}
         with (
-            patch("memebase.app.get_config", return_value=FAKE_AI_CFG),
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
             patch(
