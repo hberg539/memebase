@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from flask import (
@@ -13,7 +14,14 @@ from flask import (
 from werkzeug.exceptions import NotFound
 
 from memebase.ai import analyze_meme
-from memebase.common import ALLOWED_EXTENSIONS, CACHE_MAX_AGE, MEMES_DIR, ROOT_DIR
+from memebase.common import (
+    ALLOWED_EXTENSIONS,
+    CACHE_MAX_AGE,
+    DEFAULT_THEME,
+    MEMES_DIR,
+    ROOT_DIR,
+    THEMES_DIR,
+)
 from memebase.config import load_config, load_version
 from memebase.db import (
     add_tags,
@@ -50,6 +58,15 @@ log = logging.getLogger(__name__)
 
 VERSION = load_version()
 
+_THEME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def _safe_theme_name(name: str) -> str:
+    if _THEME_RE.match(name):
+        return name
+    return DEFAULT_THEME
+
+
 app = Flask(
     __name__,
     template_folder=str(ROOT_DIR / "templates"),
@@ -75,9 +92,12 @@ def handle_exception(e):
 @app.route("/")
 def index():
     cfg = load_config()
+    theme = request.args.get("theme", "").strip() or cfg["ui"]["theme"]
+    theme = _safe_theme_name(theme)
     return render_template(
         "index.html",
         version=VERSION,
+        theme=theme,
         grid_layout=cfg["grid"]["layout"],
         grid_thumbnail_size=cfg["grid"]["thumbnail_size"],
         grid_per_page=cfg["grid"]["per_page"],
@@ -146,6 +166,22 @@ def serve_thumbnail(uuid, ext):
     resp.headers["ETag"] = etag
     resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
     return resp
+
+
+BUILTIN_THEMES_DIR = Path(app.static_folder) / "css" / "themes"
+
+
+@app.route("/themes/<name>.css")
+def serve_theme(name):
+    name = _safe_theme_name(name)
+    filename = f"{name}.css"
+    # Custom theme in data/ takes priority
+    if (THEMES_DIR / filename).is_file():
+        return send_from_directory(THEMES_DIR, filename)
+    # Fall back to built-in, then to midnight if the file doesn't exist
+    if (BUILTIN_THEMES_DIR / filename).is_file():
+        return send_from_directory(BUILTIN_THEMES_DIR, filename)
+    return send_from_directory(BUILTIN_THEMES_DIR, f"{DEFAULT_THEME}.css")
 
 
 @app.route("/api/memes")

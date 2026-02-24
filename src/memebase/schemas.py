@@ -34,9 +34,14 @@ class ServerConfig(TypedDict):
     max_upload_size: int
 
 
+class UiConfig(TypedDict):
+    theme: str
+
+
 class AppConfig(TypedDict):
     server: ServerConfig
     grid: GridConfig
+    ui: UiConfig
     thumbnails: ThumbnailsConfig
     ai: AiConfig
 

@@ -1,0 +1,59 @@
+:root {
+	/* -- Surfaces -- */
+	--color-bg-body: #1a1a2e;
+	--color-bg-surface: #16213e;
+	--color-bg-deep: #111;
+
+	/* -- Text -- */
+	--color-text-primary: #eee;
+	--color-text-secondary: #ccc;
+	--color-text-muted: #aaa;
+	--color-text-placeholder: #888;
+	--color-text-faint: #666;
+
+	/* -- Borders -- */
+	--color-border-primary: #444;
+	--color-border-subtle: #333;
+
+	/* -- Accent: Blue -- */
+	--color-accent-blue: #0f3460;
+	--color-accent-blue-hover: #1a4a8a;
+	--color-accent-blue-text: #8ab4f8;
+	--color-accent-blue-border: #8ab4f8;
+	--color-ext-filter-bg: #1a2a3e;
+	--color-ext-filter-hover: #243a52;
+	--color-tag-filter-hover: #1a4a7a;
+	--color-drop-zone-hover-bg: rgba(15, 52, 96, 0.3);
+
+	/* -- Accent: Red / Favorites / Delete -- */
+	--color-accent-red: #f87171;
+	--color-fav-filter-bg: #3a1a1a;
+	--color-fav-filter-hover: #4a2020;
+	--color-delete-bg: #4a1a1a;
+	--color-delete-hover: #6b2020;
+	--color-delete-confirm: #991b1b;
+
+	/* -- Accent: Green / Add / Auto -- */
+	--color-add-bg: #166534;
+	--color-add-hover: #15803d;
+	--color-add-text: #bbf7d0;
+	--color-auto-bg: #1a3a2e;
+	--color-auto-hover: #234f3e;
+	--color-auto-text: #6ee7b7;
+	--color-copy-confirmed-bg: rgba(16, 185, 129, 0.8);
+
+	/* -- Accent: Gold / Meta -- */
+	--color-meta-border: #a78b00;
+	--color-meta-text: #e5c100;
+	--color-meta-hover: #ffd700;
+
+	/* -- Toasts -- */
+	--color-toast-success: #6ee7b7;
+	--color-toast-error: #f87171;
+	--color-toast-warning: #fbbf24;
+	--color-toast-info: #8ab4f8;
+	--color-toast-text: #111;
+
+	/* -- Decorative -- */
+	--gradient-logo: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd);
+}

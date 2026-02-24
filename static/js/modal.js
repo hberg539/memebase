@@ -43,9 +43,9 @@ grid.addEventListener("click", (e) => {
 	const [stem, ext] = splitExt(filename);
 	const src = `/memes/${currentUuid}/${encodeURIComponent(filename)}`;
 	if (isVideo(filename)) {
-		mMedia.innerHTML = `<video src="${src}" controls loop autoplay style="width:100%;max-height:50vh;border-radius:6px;background:#111"></video>`;
+		mMedia.innerHTML = `<video src="${src}" controls loop autoplay></video>`;
 	} else {
-		mMedia.innerHTML = `<img src="${src}" alt="" style="width:100%;max-height:50vh;object-fit:contain;border-radius:6px;background:#111">`;
+		mMedia.innerHTML = `<img src="${src}" alt="">`;
 	}
 	mName.value = stem;
 	mExt.textContent = ext;

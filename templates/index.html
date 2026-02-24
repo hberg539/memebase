@@ -2,7 +2,7 @@
 {% block content %}
 <div class="sticky-top">
 <header>
-  <h1 id="logo" style="cursor:pointer">Memebase{% if version %} <sup style="font-size:0.45em;vertical-align:super;color:#666;-webkit-text-fill-color:#666;font-weight:normal">v{{ version }}</sup>{% endif %}</h1>
+  <h1 id="logo" style="cursor:pointer">Memebase{% if version %} <sup class="version-tag">v{{ version }}</sup>{% endif %}</h1>
   <input type="search" id="search" placeholder="Search memes...">
   <button id="clear-all" disabled>Clear</button>
   <select id="sort">
@@ -44,7 +44,7 @@
 <dialog id="auto-modal">
   <div class="modal-body">
     <h3 id="auto-title">Auto-detect for 0 memes</h3>
-    <p style="font-size:0.85rem;color:#aaa">Choose which fields to set:</p>
+    <p class="modal-hint">Choose which fields to set:</p>
     <div style="display:grid;grid-template-columns:auto 1fr;gap:0.4rem 0.6rem;align-items:center">
       <input type="checkbox" id="auto-name" checked> <label for="auto-name">Filename</label>
       <input type="checkbox" id="auto-desc" checked> <label for="auto-desc">Description</label>
@@ -63,7 +63,7 @@
     <h3>Add memes</h3>
     <div class="drop-zone" id="drop-zone">
       <p>Drop files here or click to browse</p>
-      <p style="font-size:0.8rem;color:#666">Images &amp; videos</p>
+      <p class="drop-zone-hint">Images &amp; videos</p>
       <input type="file" id="file-input" multiple accept="image/*,video/*" hidden>
     </div>
     <div class="url-section">

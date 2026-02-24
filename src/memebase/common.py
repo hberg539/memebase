@@ -8,6 +8,9 @@ CONFIG_PATH = DATA_DIR / "config.toml"
 DB_PATH = DATA_DIR / "memes.db"
 MEMES_DIR = DATA_DIR / "memes"
 THUMBNAILS_DIR = DATA_DIR / "thumbnails"
+THEMES_DIR = DATA_DIR / "themes"
+
+DEFAULT_THEME = "midnight"
 
 
 DEBUG = os.getenv("MEMEBASE_DEBUG", "1") == "1"

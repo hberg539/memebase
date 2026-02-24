@@ -8,6 +8,9 @@ layout = "grid"       # "grid" or "masonry"
 thumbnail_size = 220  # card width in pixels
 per_page = "auto"     # number or "auto" to fill viewport
 
+[ui]
+theme = "midnight"
+
 [thumbnails]
 enabled = false       # generate and serve thumbnails in the grid
 max_size = 440        # max width/height in px (2x default card size for retina)

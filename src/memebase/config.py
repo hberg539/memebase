@@ -23,6 +23,9 @@ _DEFAULTS: dict[str, Any] = {
         "thumbnail_size": 220,
         "per_page": "auto",
     },
+    "ui": {
+        "theme": "midnight",
+    },
     "thumbnails": {
         "enabled": False,
         "max_size": 440,

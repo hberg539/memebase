@@ -1,0 +1,68 @@
+:root {
+	/* -- Surfaces -- */
+	--color-bg-body: #0a0a0a;
+	--color-bg-surface: #0f1a10;
+	--color-bg-deep: #050505;
+
+	/* -- Text -- */
+	--color-text-primary: #00e060;
+	--color-text-secondary: #00c050;
+	--color-text-muted: #00a040;
+	--color-text-placeholder: #007030;
+	--color-text-faint: #004a20;
+
+	/* -- Borders -- */
+	--color-border-primary: #00502a;
+	--color-border-subtle: #003018;
+
+	/* -- Card overlay & buttons -- */
+	--color-card-overlay: linear-gradient(transparent, rgba(0, 8, 0, 0.9));
+	--color-card-overlay-text: #00e060;
+	--color-card-btn-bg: rgba(0, 40, 10, 0.7);
+	--color-card-btn-hover: rgba(0, 60, 15, 0.85);
+	--color-card-btn-text: #00e060;
+
+	/* -- Accent: Blue -> Green -- */
+	--color-accent-blue: #003a10;
+	--color-accent-blue-hover: #005018;
+	--color-accent-blue-text: #00e060;
+	--color-accent-blue-border: #00ff70;
+	--color-ext-filter-bg: #0a1f0e;
+	--color-ext-filter-hover: #102a14;
+	--color-tag-filter-hover: #00501a;
+	--color-filter-active-bg: #006820;
+	--color-drop-zone-hover-bg: rgba(0, 224, 96, 0.1);
+
+	/* -- Accent: Red / Favorites / Delete -- */
+	--color-accent-red: #ff2040;
+	--color-fav-filter-bg: #1a0a0a;
+	--color-fav-filter-hover: #2a1010;
+	--color-fav-filter-active-bg: #3a1818;
+	--color-delete-bg: #3a0a0a;
+	--color-delete-hover: #501010;
+	--color-delete-confirm: #881818;
+
+	/* -- Accent: Green / Add / Auto -- */
+	--color-add-bg: #005a1a;
+	--color-add-hover: #007822;
+	--color-add-text: #b0ffb0;
+	--color-auto-bg: #0a1f0e;
+	--color-auto-hover: #102a14;
+	--color-auto-text: #00e060;
+	--color-copy-confirmed-bg: rgba(0, 180, 60, 0.8);
+
+	/* -- Accent: Gold / Meta -- */
+	--color-meta-border: #00a040;
+	--color-meta-text: #00e060;
+	--color-meta-hover: #00ff70;
+
+	/* -- Toasts -- */
+	--color-toast-success: #00c050;
+	--color-toast-error: #ff2040;
+	--color-toast-warning: #a0e000;
+	--color-toast-info: #00e060;
+	--color-toast-text: #050505;
+
+	/* -- Decorative -- */
+	--gradient-logo: linear-gradient(90deg, #00ff70, #00c050, #008030, #00c050, #00ff70, #00e060);
+}

@@ -71,6 +71,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
+| `ui.theme` | `"midnight"` | CSS theme name (see [Themes](#themes)) |
 | `thumbnails.enabled` | `false` | Generate and serve smaller thumbnails in the grid view |
 | `thumbnails.max_size` | `440` | Max width/height in pixels (2x card size for retina) |
 | `thumbnails.quality` | `80` | Output quality (1-100) |
@@ -80,6 +81,35 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
+
+## Themes
+
+Memebase ships with a couple of built-in themes. Set `ui.theme` in `./data/config.toml` to switch, or add `?theme=` to the URL to try one out without committing:
+
+```
+http://localhost:5000/?theme=ember
+```
+
+| Theme | Look |
+|-------|------|
+| `midnight` | Deep navy and blue accents (default) |
+| `ember` | Warm brown tones with amber and orange accents |
+| `sakura` | Light cherry blossom pinks and soft rose accents |
+| `matrix` | Black and phosphor green, follow the white rabbit |
+
+### Custom themes
+
+You can add your own themes by dropping a CSS file into `./data/themes/` and setting `ui.theme` to the filename (without `.css`):
+
+```bash
+# Example: create a custom theme called "vapor"
+cp static/css/themes/midnight.css data/themes/vapor.css
+# edit data/themes/vapor.css to your liking
+```
+
+Then set `ui.theme = "vapor"` in `./data/config.toml` (or just visit `?theme=vapor`).
+
+Custom themes in `data/themes/` take priority over built-in ones with the same name, so you can override `midnight` or `ember` without touching the source.
 
 ## Thumbnails
 
@@ -156,6 +186,7 @@ data/
   config.toml    # Your configuration
   memes/         # Uploaded meme files
   thumbnails/    # Generated thumbnails (if enabled)
+  themes/        # Custom CSS themes (optional)
 ```
 
 ## Hotkeys
