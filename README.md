@@ -150,7 +150,8 @@ AI features are disabled by default. When enabled, Memebase can use a vision mod
 ### Setup
 
 1. Set `ai.enabled = true` in `./data/config.toml`
-2. Pass your API key as an environment variable
+2. Set `ai.model` to a [LiteLLM-compatible model string](#supported-models) (e.g. `"openai/gpt-4o"`)
+3. Pass your API key as an environment variable
 
 For Docker, create a `memebase.env` file next to `docker-compose.yml` and add `env_file` to your service:
 
