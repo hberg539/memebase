@@ -193,6 +193,8 @@ When AI is enabled, an **Auto** button appears in two places:
 
 Memes that fail during bulk auto-detect are automatically tagged with `auto-failed`, so you can filter for them later and review by hand.
 
+You can customize the `ai.prompt` in `./data/config.toml` to fine-tune how the model names, describes, and tags your memes.
+
 ### Supported models
 
 Memebase uses [LiteLLM](https://docs.litellm.ai/) for model routing, so pretty much any vision model works:
