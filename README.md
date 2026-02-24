@@ -72,7 +72,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
 | `ui.theme` | `"midnight"` | CSS theme name (see [Themes](#themes)) |
-| `thumbnails.enabled` | `false` | Generate and serve smaller thumbnails in the grid view |
+| `thumbnails.enabled` | `true` | Generate and serve smaller thumbnails in the grid view |
 | `thumbnails.max_size` | `440` | Max width/height in pixels (2x card size for retina) |
 | `thumbnails.quality` | `80` | Output quality (1-100) |
 | `thumbnails.format` | `"webp"` | Thumbnail format: `"webp"` or `"jpeg"` |
@@ -113,7 +113,7 @@ Custom themes in `data/themes/` take priority over built-in ones with the same n
 
 ## Thumbnails
 
-Disabled by default. When enabled, the grid view serves small pre-generated thumbnails instead of full-resolution files - way faster page loads and less memory usage. Clicking a meme still shows the full-size original.
+Enabled by default. When enabled, the grid view serves small pre-generated thumbnails instead of full-resolution files - way faster page loads and less memory usage. Clicking a meme still shows the full-size original.
 
 Set `thumbnails.enabled = true` in `./data/config.toml` and you're good to go. Thumbnails are generated on first view and cached to `data/thumbnails/`.
 

@@ -27,7 +27,7 @@ _DEFAULTS: dict[str, Any] = {
         "theme": "midnight",
     },
     "thumbnails": {
-        "enabled": False,
+        "enabled": True,
         "max_size": 440,
         "quality": 80,
         "format": "webp",
