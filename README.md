@@ -34,6 +34,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
 - **Copy & download** - One click to copy a meme to your clipboard or download it
+- **Themes** - Ships with built-in themes and supports custom CSS themes
 - **Self-contained** - Everything lives in a single `./data` folder. Easy to back up, easy to move
 
 **Supported formats:** PNG, JPG, JPEG, GIF, WEBP, WEBM, MP4
