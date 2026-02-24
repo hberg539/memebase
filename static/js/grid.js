@@ -68,7 +68,7 @@ function buildCardHtml(m, isNew) {
       ${media}
       <div class="card-overlay">
         ${tags}
-        <div class="name">${(() => {
+        <div class="card-name">${(() => {
 					const d = m.filename.lastIndexOf(".");
 					return d > 0
 						? `<span class="name-base">${esc(m.filename.slice(0, d))}</span>${esc(m.filename.slice(d))}`
@@ -117,7 +117,7 @@ function buildFilters(filters) {
 		a[0].localeCompare(b[0]),
 	)) {
 		const active = activeExtFilter === ext ? " active" : "";
-		html += `<span class="filter-chip ext${active}" data-ext="${esc(ext)}">${esc(ext)} (${count})</span>`;
+		html += `<span class="filter-chip ext-filter${active}" data-ext="${esc(ext)}">${esc(ext)} (${count})</span>`;
 	}
 	if (Object.keys(filters.tags).length) {
 		html += '<span class="filter-sep"></span>';
@@ -138,7 +138,7 @@ function renderGrid() {
 	const memes = allMemes;
 	if (!memes.length) {
 		prevUuids = new Set();
-		grid.innerHTML = '<div class="empty">No memes found</div>';
+		grid.innerHTML = '<div class="grid-empty">No memes found</div>';
 		return;
 	}
 	const newUuids = new Set(memes.map((m) => m.uuid));

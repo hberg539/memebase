@@ -192,7 +192,7 @@ header select {
 .card:hover .card-overlay {
 	opacity: 1;
 }
-.card .name {
+.card .card-name {
 	font-size: 0.8rem;
 	color: #eee;
 	display: flex;
@@ -420,7 +420,7 @@ dialog.closing::backdrop {
 .modal-fav.active {
 	color: #f87171;
 }
-.empty {
+.grid-empty {
 	text-align: center;
 	padding: 3rem;
 	color: #666;
@@ -521,11 +521,11 @@ dialog.closing::backdrop {
 .filter-chip.fav-filter:hover {
 	background: #4a2020;
 }
-.filter-chip.ext {
+.filter-chip.ext-filter {
 	background: #1a2a3e;
 	color: #8ab4f8;
 }
-.filter-chip.ext:hover {
+.filter-chip.ext-filter:hover {
 	background: #243a52;
 }
 .filter-chip.tag-filter {
