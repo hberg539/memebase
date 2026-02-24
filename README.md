@@ -29,7 +29,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 
 ## Features
 
-- **Upload** - Drag-and-drop or paste a URL. Duplicates are caught automatically
+- **Upload** - Drag-and-drop, paste from clipboard, or add a URL. Duplicates are caught automatically
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting

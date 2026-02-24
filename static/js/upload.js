@@ -135,4 +135,24 @@ document.addEventListener("drop", (e) => {
 	if (files.length) uploadFiles(files);
 });
 
+/* -- Clipboard paste upload -- */
+
+document.addEventListener("paste", (e) => {
+	const tag = document.activeElement?.tagName;
+	if (tag === "INPUT" || tag === "TEXTAREA") return;
+	const items = [...(e.clipboardData?.items || [])];
+	const files = items
+		.filter((item) => item.type.startsWith("image/"))
+		.map((item) => item.getAsFile())
+		.filter(Boolean)
+		.map((file) => {
+			const ext = file.type.split("/")[1] || "png";
+			const ts = new Date().toISOString().replace(/[-:]/g, "").replace("T", "_").split(".")[0];
+			return new File([file], `paste_${ts}.${ext}`, { type: file.type });
+		});
+	if (!files.length) return;
+	e.preventDefault();
+	uploadFiles(files);
+});
+
 load();
