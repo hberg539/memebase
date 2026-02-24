@@ -91,13 +91,13 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
 | `ui.title` | `"Memebase"` | Page title and header text |
 | `ui.theme` | `"midnight"` | CSS theme name (see [Themes](#themes)) |
-| `thumbnails.enabled` | `true` | Generate and serve smaller thumbnails in the grid view |
+| `thumbnails.enabled` | `true` | Generate and serve smaller thumbnails in the grid view (see [Thumbnails](#thumbnails)) |
 | `thumbnails.max_size` | `440` | Max width/height in pixels (2x card size for retina) |
 | `thumbnails.quality` | `80` | Output quality (1-100) |
 | `thumbnails.format` | `"webp"` | Thumbnail format: `"webp"` or `"jpeg"` |
 | `thumbnails.skip_types` | `["gif"]` | File extensions to skip, e.g. `["gif", "mp4"]` |
-| `ai.enabled` | `false` | Turn the AI auto-detect feature on or off |
-| `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |
+| `ai.enabled` | `false` | Turn the AI auto-detect feature on or off (see [AI auto-detect](#ai-auto-detect)) |
+| `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see [Supported models](#supported-models)) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
 
