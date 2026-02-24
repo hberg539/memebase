@@ -9,6 +9,18 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 
 ![Memebase](.github/assets/memebase_main.png)
 
+## Table of contents
+
+- [What it does](#what-it-does)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Themes](#themes)
+- [Thumbnails](#thumbnails)
+- [AI](#ai)
+- [Data layout](#data-layout)
+- [Hotkeys](#hotkeys)
+- [License](#license)
+
 ## What it does
 
 - **Upload** - Drag-and-drop or paste a URL. Duplicates are caught automatically
@@ -177,7 +189,7 @@ Memebase uses [LiteLLM](https://docs.litellm.ai/) for model routing, so pretty m
 
 Set the `model` field in `./data/config.toml` and pass the matching API key as an environment variable.
 
-## Data storage
+## Data layout
 
 Everything lives in `./data`:
 
