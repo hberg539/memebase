@@ -1,4 +1,3 @@
-import logging
 import re
 from pathlib import Path
 
@@ -38,6 +37,7 @@ from memebase.db import (
     update_favorite,
     update_filename,
 )
+from memebase.log import get_logger
 from memebase.schemas import MemeError
 from memebase.service import (
     apply_ai_suggestions,
@@ -49,12 +49,7 @@ from memebase.service import (
 from memebase.thumbnails import delete_thumbnails, get_or_create_thumbnail
 from memebase.util import generate_placeholder_image, sanitize_filename
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 VERSION = load_version()
 

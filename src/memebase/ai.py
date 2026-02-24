@@ -1,14 +1,14 @@
 import base64
 import json
-import logging
 import mimetypes
 import re
 
 import litellm
 
+from memebase.log import get_logger
 from memebase.schemas import AiSuggestion
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 def build_prompt(template: str, existing_tags: list[str]) -> str:

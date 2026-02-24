@@ -1,4 +1,3 @@
-import logging
 import shutil
 import subprocess
 import tempfile
@@ -8,8 +7,9 @@ from PIL import Image
 
 from memebase.common import THUMBNAILS_DIR
 from memebase.config import load_config
+from memebase.log import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 VIDEO_EXTS = {".webm", ".mp4"}

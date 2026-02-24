@@ -1,4 +1,3 @@
-import logging
 import shutil
 from typing import Any
 
@@ -8,9 +7,10 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 from memebase.common import CONFIG_DEFAULT, CONFIG_PATH, ROOT_DIR
+from memebase.log import get_logger
 from memebase.schemas import AppConfig
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 _DEFAULTS: dict[str, Any] = {
     "server": {
