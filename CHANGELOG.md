@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.6.0](https://github.com/hberg539/memebase/compare/v0.5.2...v0.6.0) (2026-02-24)
+
+
+### Features
+
+* add clipboard paste upload ([7aba520](https://github.com/hberg539/memebase/commit/7aba520fcd84f9b10f296d5509a3ffc32240ae3b))
+* **thumbnails:** enable thumbnails by default ([43eacc7](https://github.com/hberg539/memebase/commit/43eacc7cce550b8e70916f41426bb94c78d30340))
+* **ui:** add configurable ui.title setting ([f030143](https://github.com/hberg539/memebase/commit/f030143b44c3ec0ba8f99b33837228f91a9d9c2f))
+* **ui:** add theming system, built-in themes, and custom theme support ([e0e8b4b](https://github.com/hberg539/memebase/commit/e0e8b4ba5fb0c7d841bb9fc4e17a3f578d6b9dbd))
+
+
+### Refactoring
+
+* **ui:** make pagination sliding window configurable and simplify logic ([742a0e7](https://github.com/hberg539/memebase/commit/742a0e76fed9f8501bcd3f51c29f3f89f91c0b90))
+* **ui:** rename ambiguous CSS class names for theming clarity ([e969670](https://github.com/hberg539/memebase/commit/e9696707fe959d2d0dbbc335e1ca9602c4d1f442))
+
+
+### Documentation
+
+* add model step to AI setup instructions ([c2bc9bd](https://github.com/hberg539/memebase/commit/c2bc9bdd54be54d238b7eac03cfa8eed45854bcc))
+* add prompt customization note to AI section ([3001f56](https://github.com/hberg539/memebase/commit/3001f56c587de9dd410b006cf41a95deb2eb0fff))
+* add section links to configuration table ([2a642e5](https://github.com/hberg539/memebase/commit/2a642e57d91eaf77ea28f218831e82cd6a818de8))
+* add sub-headers to TOC ([0b400c0](https://github.com/hberg539/memebase/commit/0b400c026d9a6558885c9ef099bb4561ca03ffd0))
+* add table of contents and rename data storage section ([12a299a](https://github.com/hberg539/memebase/commit/12a299a9dbbd2d72d515cde3ce04527627afc749))
+* add themes to features list ([49016fe](https://github.com/hberg539/memebase/commit/49016fe92f6833d6d29056103221ea2985310117))
+* move hotkeys section up and update escape description ([de43103](https://github.com/hberg539/memebase/commit/de4310334b5112b90f599f94139776a40d91c982))
+* rename README sections ([97d4975](https://github.com/hberg539/memebase/commit/97d4975081044add37b2895bb05287bb8cf80ed3))
+* update python badge to 3.11+ ([0c3af15](https://github.com/hberg539/memebase/commit/0c3af15f4502d303b86fd63a962d18111710f7ef))
+
 ## [0.5.2](https://github.com/hberg539/memebase/compare/v0.5.1...v0.5.2) (2026-02-23)
 
 
