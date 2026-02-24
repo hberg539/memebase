@@ -16,6 +16,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
   - [Docker (recommended)](#docker-recommended)
   - [Local development](#local-development)
 - [Configuration](#configuration)
+- [Hotkeys](#hotkeys)
 - [Themes](#themes)
   - [Custom themes](#custom-themes)
 - [Thumbnails](#thumbnails)
@@ -24,7 +25,6 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
   - [Usage](#usage)
   - [Supported models](#supported-models)
 - [Data layout](#data-layout)
-- [Hotkeys](#hotkeys)
 - [License](#license)
 
 ## Features
@@ -100,6 +100,15 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see below) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
+
+## Hotkeys
+
+| Key | Where | What it does |
+|-----|-------|--------------|
+| `Shift` + click | Grid | Select multiple memes |
+| `Escape` | Grid / Meme dialog | Clear selection or close dialog |
+| `Enter` | Meme dialog | Save changes |
+| `F` | Meme dialog | Toggle favorite |
 
 ## Themes
 
@@ -208,15 +217,6 @@ data/
   thumbnails/    # Generated thumbnails (if enabled)
   themes/        # Custom CSS themes (optional)
 ```
-
-## Hotkeys
-
-| Key | Where | What it does |
-|-----|-------|--------------|
-| `Shift` + click | Grid | Select multiple memes |
-| `Escape` | Grid | Clear current selection |
-| `Enter` | Meme dialog | Save changes |
-| `F` | Meme dialog | Toggle favorite |
 
 ## License
 
