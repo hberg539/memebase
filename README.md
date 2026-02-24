@@ -11,17 +11,17 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 
 ## Table of contents
 
-- [What it does](#what-it-does)
+- [Features](#features)
 - [Getting started](#getting-started)
 - [Configuration](#configuration)
 - [Themes](#themes)
 - [Thumbnails](#thumbnails)
-- [AI](#ai)
+- [AI auto-detect](#ai-auto-detect)
 - [Data layout](#data-layout)
 - [Hotkeys](#hotkeys)
 - [License](#license)
 
-## What it does
+## Features
 
 - **Upload** - Drag-and-drop or paste a URL. Duplicates are caught automatically
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
@@ -137,7 +137,7 @@ Set `thumbnails.enabled = true` in `./data/config.toml` and you're good to go. T
 - `["mp4", "webm"]` - skip video thumbnails entirely
 - `["gif", "mp4", "webm"]` - only thumbnail static images
 
-## AI
+## AI auto-detect
 
 AI features are disabled by default. When enabled, Memebase can use a vision model to automatically generate filenames, descriptions, and tags for your memes - one at a time or in bulk.
 
