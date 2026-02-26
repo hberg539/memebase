@@ -49,7 +49,7 @@ def _find_scrape_dir(tmp_path):
 
 
 class TestScrapeUrl:
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_collects_media_files(self, mock_job_cls, tmp_path):
         """scrape_url collects allowed media files from gallery-dl output."""
 
@@ -69,7 +69,7 @@ class TestScrapeUrl:
         assert results[0][1] == b"PNG data"
 
     @patch("memebase.scrape.MAX_FILES", 5)
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_respects_max_files(self, mock_job_cls, tmp_path):
         """scrape_url caps results at MAX_FILES."""
 
@@ -87,7 +87,7 @@ class TestScrapeUrl:
 
         assert len(results) == 5
 
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_filters_unsupported_extensions(self, mock_job_cls, tmp_path):
         """scrape_url skips files with non-allowed extensions."""
 
@@ -107,7 +107,7 @@ class TestScrapeUrl:
         assert len(results) == 1
         assert results[0][0] == "image.png"
 
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_error_on_no_media(self, mock_job_cls, tmp_path):
         """scrape_url raises ValueError when no supported media is found."""
         mock_job = MagicMock()
@@ -117,7 +117,7 @@ class TestScrapeUrl:
         with _patch_temp_dir(tmp_path), pytest.raises(ValueError, match="No supported media"):
             scrape_url("https://example.com/empty")
 
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_wraps_gallery_dl_exception(self, mock_job_cls, tmp_path):
         """scrape_url wraps gallery-dl exceptions in ValueError."""
         mock_job = MagicMock()
@@ -127,7 +127,7 @@ class TestScrapeUrl:
         with _patch_temp_dir(tmp_path), pytest.raises(ValueError, match="gallery-dl failed"):
             scrape_url("https://example.com/broken")
 
-    @patch("memebase.scrape.gdl_job.DownloadJob")
+    @patch("memebase.scrape._LimitedDownloadJob")
     def test_cleans_up_temp_dir(self, mock_job_cls, tmp_path):
         """scrape_url removes its temp directory after completion."""
 
