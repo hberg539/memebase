@@ -25,6 +25,7 @@ docker-compose up          # Run with Docker
 - `src/memebase/db.py` - SQLite database layer (queries, all SQL)
 - `src/memebase/migrate.py` - Migration runner using `PRAGMA user_version` to apply versioned schema changes at startup
 - `src/memebase/migrations/` - Numbered migration modules (e.g. `0001_initial_schema.py`), each with a `migrate(conn)` function
+- `src/memebase/temp.py` - Temp directory management (create unique temp dirs, cleanup on startup)
 - `src/memebase/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
 **Tests - `tests/`:**

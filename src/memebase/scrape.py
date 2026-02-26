@@ -1,12 +1,12 @@
+import shutil
 import threading
-import time
-import uuid
 
 from gallery_dl import config as gdl_config
 from gallery_dl import job as gdl_job
 
-from memebase.common import ALLOWED_EXTENSIONS, TEMP_DIR
+from memebase.common import ALLOWED_EXTENSIONS
 from memebase.log import get_logger
+from memebase.temp import make_temp_dir
 from memebase.util import sanitize_filename
 
 log = get_logger(__name__)
@@ -32,10 +32,7 @@ def scrape_url(url: str) -> list[tuple[str, bytes]]:
     Returns a list of (sanitized_basename, content_bytes) tuples.
     Raises ValueError on failure or if no media is found.
     """
-    TEMP_DIR.mkdir(parents=True, exist_ok=True)
-    dirname = f"{time.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-    tmp_path = TEMP_DIR / dirname
-    tmp_path.mkdir()
+    tmp_path = make_temp_dir()
 
     try:
         with _lock:
@@ -58,9 +55,7 @@ def scrape_url(url: str) -> list[tuple[str, bytes]]:
             if len(results) >= MAX_FILES:
                 break
     finally:
-        # TODO: re-enable cleanup after testing
-        # shutil.rmtree(tmp_path, ignore_errors=True)
-        log.debug("scrape temp dir kept for debugging: %s", tmp_path)
+        shutil.rmtree(tmp_path, ignore_errors=True)
 
     if not results:
         raise ValueError("No supported media found at URL")

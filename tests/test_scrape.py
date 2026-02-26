@@ -38,7 +38,7 @@ class TestIsMediaUrl:
 
 def _patch_temp_dir(tmp_path):
     """Patch TEMP_DIR so scrape_url creates temp dirs inside tmp_path."""
-    return patch("memebase.scrape.TEMP_DIR", tmp_path)
+    return patch("memebase.temp.TEMP_DIR", tmp_path)
 
 
 def _find_scrape_dir(tmp_path):
@@ -127,8 +127,6 @@ class TestScrapeUrl:
         with _patch_temp_dir(tmp_path), pytest.raises(ValueError, match="gallery-dl failed"):
             scrape_url("https://example.com/broken")
 
-    # TODO: re-enable when cleanup is re-enabled in scrape.py
-    @pytest.mark.skip(reason="cleanup temporarily disabled for debugging")
     @patch("memebase.scrape.gdl_job.DownloadJob")
     def test_cleans_up_temp_dir(self, mock_job_cls, tmp_path):
         """scrape_url removes its temp directory after completion."""
