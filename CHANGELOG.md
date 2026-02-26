@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/hberg539/memebase/compare/v0.6.0...v0.7.0) (2026-02-24)
+
+
+### Features
+
+* **db:** add lightweight SQLite migration system ([d54017e](https://github.com/hberg539/memebase/commit/d54017e7f3afe707b92c8b134db9f130c5999816))
+
+
+### Refactoring
+
+* add parse_ext helper to centralize extension extraction ([443c5de](https://github.com/hberg539/memebase/commit/443c5de8371d7a5c67af3391f433a57e01a8d173))
+* convert to Flask app factory pattern ([c49f9f3](https://github.com/hberg539/memebase/commit/c49f9f398f0b75101b9f76e7f74dae25e54a8a4e))
+* extract logging setup into dedicated module ([9fbd7a0](https://github.com/hberg539/memebase/commit/9fbd7a03874699bd59cd515245e8ec0560276fb7))
+* rename load_config to get_config ([bfa5649](https://github.com/hberg539/memebase/commit/bfa5649266bb95d24cab0dd3ab21005cc32a5c1c))
+
 ## [0.6.0](https://github.com/hberg539/memebase/compare/v0.5.2...v0.6.0) (2026-02-24)
 
 
