@@ -39,9 +39,9 @@ from memebase.db import (
 )
 from memebase.log import get_logger
 from memebase.schemas import MemeError
+from memebase.scrape import scrape_url
 from memebase.service import (
     apply_ai_suggestions,
-    download_from_url,
     get_meme_file_path,
     register_meme,
     resolve_unique_path,
@@ -254,27 +254,34 @@ def create_app(config=None):
             return jsonify({"error": "No URL provided"}), 400
 
         try:
-            basename, content = download_from_url(url)
+            downloads = scrape_url(url, max_files=config["scrape"]["max_files"])
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
-        dest, basename = resolve_unique_path(MEMES_DIR, basename)
-        with open(dest, "wb") as f:
-            f.write(content)
-
+        results = []
+        has_new = False
         with get_db() as conn:
-            meme, is_dup = register_meme(conn, dest)
-            if is_dup:
-                log.info("url upload skipped (duplicate): url=%s uuid=%s", url, meme["uuid"])
-                return jsonify(meme), 200
-            log.info(
-                "url upload: url=%s filename=%s uuid=%s size=%d",
-                url,
-                basename,
-                meme["uuid"],
-                meme["size"],
-            )
-            return jsonify(meme), 201
+            for basename, content in downloads:
+                dest, basename = resolve_unique_path(MEMES_DIR, basename)
+                with open(dest, "wb") as f:
+                    f.write(content)
+
+                meme, is_dup = register_meme(conn, dest)
+                if is_dup:
+                    meme["duplicate"] = True
+                    log.info("url upload skipped (duplicate): url=%s uuid=%s", url, meme["uuid"])
+                else:
+                    has_new = True
+                    log.info(
+                        "url upload: url=%s filename=%s uuid=%s size=%d",
+                        url,
+                        basename,
+                        meme["uuid"],
+                        meme["size"],
+                    )
+                results.append(meme)
+
+        return jsonify(results), 201 if has_new else 200
 
     @app.route("/api/memes/<uuid>", methods=["PUT"])
     def update_meme_route(uuid):

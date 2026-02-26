@@ -84,20 +84,26 @@ urlDownload.addEventListener("click", async () => {
 	urlDownload.disabled = true;
 	urlDownload.textContent = "Downloading...";
 	try {
-		const meme = await Api.downloadUrl(url);
+		const memes = await Api.downloadUrl(url);
 		addModal.close();
 		urlInput.value = "";
+		const dupes = memes.filter((m) => m.duplicate);
+		const fresh = memes.filter((m) => !m.duplicate);
+		for (const m of fresh) showAlert(`Downloaded ${m.filename}`, "success");
+		for (const m of dupes) showAlert(`${m.filename}: duplicate skipped`, "warning");
 		currentPage = 1;
 		await load(search.value);
 		clearSelection();
-		selectedUuids.add(meme.uuid);
-		const card = grid.querySelector(`.card[data-uuid="${meme.uuid}"]`);
-		if (card) card.classList.add("selected");
+		for (const m of memes) {
+			selectedUuids.add(m.uuid);
+			const card = grid.querySelector(`.card[data-uuid="${m.uuid}"]`);
+			if (card) card.classList.add("selected");
+		}
 		updateSelectBar();
-		showAlert(`Downloaded ${meme.filename}`, "success");
 	} catch (e) {
 		const isUnsupported = e.message?.includes("Unsupported file type");
-		showAlert(e.message, isUnsupported ? "warning" : "error");
+		const isNoMedia = e.message?.includes("No supported media");
+		showAlert(e.message, isUnsupported || isNoMedia ? "warning" : "error");
 	} finally {
 		urlDownload.disabled = false;
 		urlDownload.textContent = "Download";

@@ -38,6 +38,9 @@ _DEFAULTS: dict[str, Any] = {
         "enabled": False,
         "parallel": 3,
     },
+    "scrape": {
+        "max_files": 4,
+    },
 }
 
 

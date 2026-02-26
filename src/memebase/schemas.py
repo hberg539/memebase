@@ -39,12 +39,17 @@ class UiConfig(TypedDict):
     theme: str
 
 
+class ScrapeConfig(TypedDict):
+    max_files: int
+
+
 class AppConfig(TypedDict):
     server: ServerConfig
     grid: GridConfig
     ui: UiConfig
     thumbnails: ThumbnailsConfig
     ai: AiConfig
+    scrape: ScrapeConfig
 
 
 class AiSuggestion(TypedDict, total=False):

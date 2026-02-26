@@ -29,7 +29,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 
 ## Features
 
-- **Upload** - Drag-and-drop, paste from clipboard, or add a URL. Duplicates are caught automatically
+- **Upload** - Drag-and-drop, paste from clipboard, or add a URL. Supports page scraping via [gallery-dl](https://github.com/mikf/gallery-dl) ([hundreds of supported sites](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md))
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
@@ -97,6 +97,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `thumbnails.quality` | `80` | Output quality (1-100) |
 | `thumbnails.format` | `"webp"` | Thumbnail format: `"webp"` or `"jpeg"` |
 | `thumbnails.skip_types` | `["gif"]` | File extensions to skip, e.g. `["gif", "mp4"]` |
+| `scrape.max_files` | `4` | Max media files to download per URL |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off (see [AI auto-detect](#ai-auto-detect)) |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see [Supported models](#supported-models)) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |

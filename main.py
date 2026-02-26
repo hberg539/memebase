@@ -7,9 +7,11 @@ from memebase.app import create_app
 from memebase.common import CONFIG_PATH, DEBUG
 from memebase.config import get_config
 from memebase.db import init_db
+from memebase.temp import cleanup as cleanup_temp
 
 if __name__ == "__main__":
     init_db()
+    cleanup_temp()
     cfg = get_config()
     app = create_app(cfg)
     app.run(
