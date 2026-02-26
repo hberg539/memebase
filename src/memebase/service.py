@@ -14,8 +14,28 @@ from memebase.db import (
     update_description,
     update_filename,
 )
+from memebase.log import get_logger
 from memebase.schemas import AiSuggestion, Meme, MemeError
 from memebase.util import file_hash, parse_ext, sanitize_filename
+
+log = get_logger(__name__)
+
+
+def is_media_url(url: str) -> bool:
+    """HEAD request to check if URL points directly to a media file.
+
+    Returns True if Content-Type starts with image/ or video/.
+    Returns False for text/html, unknown types, or on any error.
+    """
+    try:
+        req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            ct = resp.headers.get("Content-Type", "")
+            ct = ct.split(";")[0].strip().lower()
+            return ct.startswith(("image/", "video/"))
+    except Exception:
+        log.debug("HEAD request failed for %s, treating as webpage", url)
+        return False
 
 
 def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:

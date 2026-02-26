@@ -498,6 +498,18 @@ wheels = [
 ]
 
 [[package]]
+name = "gallery-dl"
+version = "1.31.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/ff/0282bff875ccdcad0cc751f64a38ecf8de29da728e2ca3ae8a501fc74490/gallery_dl-1.31.7.tar.gz", hash = "sha256:d599cbe22326fdb74c4b398f83bbd3a37855be79efaf54a05f450deab3ad1d90", size = 664615, upload-time = "2026-02-24T13:47:06.986Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/65/b9cd70a2ec82a45cf2e88d18a2e57135a0a28a76ae5e80deaa32fd7b5cc1/gallery_dl-1.31.7-py3-none-any.whl", hash = "sha256:546168a1ea8fac5bdf702dd32efc9cb1a9c084a47eef3bd0be74c5e60d0c5b38", size = 824079, upload-time = "2026-02-24T13:47:03.01Z" },
+]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -880,6 +892,7 @@ version = "0.6.0"
 source = { virtual = "." }
 dependencies = [
     { name = "flask" },
+    { name = "gallery-dl" },
     { name = "litellm" },
     { name = "pillow" },
 ]
@@ -893,6 +906,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "flask", specifier = ">=3.0" },
+    { name = "gallery-dl", specifier = ">=1.28" },
     { name = "litellm", specifier = ">=1.0" },
     { name = "pillow", specifier = ">=10.0" },
 ]

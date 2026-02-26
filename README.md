@@ -12,6 +12,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 ## Table of contents
 
 - [Features](#features)
+- [URL scraping](#url-scraping)
 - [Getting started](#getting-started)
   - [Docker (recommended)](#docker-recommended)
   - [Local development](#local-development)
@@ -30,6 +31,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 ## Features
 
 - **Upload** - Drag-and-drop, paste from clipboard, or add a URL. Duplicates are caught automatically
+- **URL scraping** - Paste a link to a tweet, Reddit post, or other webpage and Memebase extracts the media automatically via [gallery-dl](https://github.com/mikf/gallery-dl)
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
@@ -38,6 +40,17 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 - **Self-contained** - Everything lives in a single `./data` folder. Easy to back up, easy to move
 
 **Supported formats:** PNG, JPG, JPEG, GIF, WEBP, WEBM, MP4
+
+## URL scraping
+
+Paste any URL into the download field and Memebase will figure out what to do with it:
+
+- **Direct file URLs** (e.g. `https://example.com/meme.png`) - downloaded directly, same as before
+- **Webpage URLs** (tweets, Reddit posts, Imgur pages, etc.) - [gallery-dl](https://github.com/mikf/gallery-dl) extracts the embedded media automatically
+
+gallery-dl supports a ton of sites - Twitter/X, Reddit, Imgur, Instagram, Tumblr, and hundreds more. Check the [gallery-dl supported sites list](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md) for the full rundown.
+
+No extra config needed. If gallery-dl can find media on the page, Memebase will grab it.
 
 ## Getting started
 
