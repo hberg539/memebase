@@ -225,6 +225,6 @@ data/
 
 MIT
 
-## AI disclaimer
+## AI-assisted development
 
-This project was built with heavy use of LLM-assisted development. The codebase is reviewed, directed, and maintained by a human developer. LLMs were used as a tool to speed things up, not as a replacement for engineering judgment. Use at your own risk.
+I built this for my own personal use and as a proof of concept to find out what LLMs can do. I directed and reviewed most of the AI-generated code, but you must use this project entirely at your own risk.
