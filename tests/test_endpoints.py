@@ -1,4 +1,3 @@
-import unittest.mock
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -212,25 +211,18 @@ class TestUpdateMeme:
         assert "already exists" in resp.get_json()["error"]
 
     def test_rename_success(self, client, tmp_path):
-        old_file = tmp_path / "old.png"
-        old_file.write_bytes(b"content")
         with (
             patch("memebase.app.get_db"),
             patch(
                 "memebase.app.get_meme_file_path",
                 return_value=("old.png", tmp_path / "old.png", None),
             ),
-            patch("memebase.app.MEMES_DIR", tmp_path),
-            patch("memebase.app.update_filename") as mock_rename,
+            patch("memebase.app.rename_meme", return_value="new_name.png") as mock_rename,
             patch("memebase.app.get_meme", return_value={**FAKE_MEME, "filename": "new_name.png"}),
         ):
             resp = client.put("/api/memes/test-uuid-1234", json={"new_name": "new_name"})
         assert resp.status_code == 200
-        mock_rename.assert_called_once_with(
-            unittest.mock.ANY, "test-uuid-1234", "new_name.png", "png"
-        )
-        assert not old_file.exists()
-        assert (tmp_path / "new_name.png").exists()
+        mock_rename.assert_called_once()
 
     def test_update_tags(self, client):
         with (
@@ -249,12 +241,10 @@ class TestUpdateMeme:
 
 
 class TestDeleteMeme:
-    def test_success_returns_204(self, client, tmp_path):
-        (tmp_path / "test.png").write_bytes(b"content")
+    def test_success_returns_204(self, client):
         with (
             patch("memebase.app.get_db"),
-            patch("memebase.app.delete_meme_row", return_value="test.png"),
-            patch("memebase.app.MEMES_DIR", tmp_path),
+            patch("memebase.app.delete_meme", return_value="test.png"),
         ):
             resp = client.delete("/api/memes/test-uuid")
         assert resp.status_code == 204
@@ -262,21 +252,18 @@ class TestDeleteMeme:
     def test_not_found_returns_404(self, client):
         with (
             patch("memebase.app.get_db"),
-            patch("memebase.app.delete_meme_row", return_value=None),
+            patch("memebase.app.delete_meme", side_effect=LookupError("Not found")),
         ):
             resp = client.delete("/api/memes/unknown")
         assert resp.status_code == 404
 
-    def test_file_deleted_from_disk(self, client, tmp_path):
-        f = tmp_path / "test.png"
-        f.write_bytes(b"content")
+    def test_calls_delete_meme(self, client):
         with (
             patch("memebase.app.get_db"),
-            patch("memebase.app.delete_meme_row", return_value="test.png"),
-            patch("memebase.app.MEMES_DIR", tmp_path),
+            patch("memebase.app.delete_meme", return_value="test.png") as mock_del,
         ):
             client.delete("/api/memes/test-uuid")
-        assert not f.exists()
+        mock_del.assert_called_once()
 
 
 class TestAutoDescribe:

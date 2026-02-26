@@ -1,7 +1,10 @@
 import sqlite3
+from unittest.mock import patch
+
+import pytest
 
 from memebase.migrate import apply_migrations
-from memebase.service import register_meme, resolve_unique_path
+from memebase.service import delete_meme, register_meme, rename_meme, resolve_unique_path
 
 
 class TestResolveUniquePath:
@@ -56,3 +59,73 @@ class TestRegisterMeme:
         assert is_dup2
         assert meme2["uuid"] == meme1["uuid"]
         assert f2.exists()
+
+
+class TestRenameMeme:
+    def _setup(self, tmp_path):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        apply_migrations(conn)
+        f = tmp_path / "old_name.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        return conn, meme["uuid"], meme["filename"]
+
+    def test_success(self, tmp_path):
+        conn, uuid, filename = self._setup(tmp_path)
+        new = rename_meme(conn, uuid, filename, "new_name", tmp_path)
+        assert new == "new_name.png"
+        assert (tmp_path / "new_name.png").exists()
+        assert not (tmp_path / "old_name.png").exists()
+
+    def test_collision_raises(self, tmp_path):
+        conn, uuid, filename = self._setup(tmp_path)
+        (tmp_path / "taken.png").write_bytes(b"x")
+        with pytest.raises(FileExistsError):
+            rename_meme(conn, uuid, filename, "taken", tmp_path)
+
+    def test_unchanged_stem_raises(self, tmp_path):
+        conn, uuid, filename = self._setup(tmp_path)
+        with pytest.raises(ValueError, match="unchanged"):
+            rename_meme(conn, uuid, filename, "old_name", tmp_path)
+
+    def test_empty_stem_raises(self, tmp_path):
+        conn, uuid, filename = self._setup(tmp_path)
+        with pytest.raises(ValueError, match="empty"):
+            rename_meme(conn, uuid, filename, "   ", tmp_path)
+
+
+class TestDeleteMeme:
+    def _setup(self, tmp_path):
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        apply_migrations(conn)
+        f = tmp_path / "doomed.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        return conn, meme["uuid"]
+
+    @patch("memebase.service.delete_thumbnails")
+    def test_removes_row_and_file(self, mock_thumbs, tmp_path):
+        conn, uuid = self._setup(tmp_path)
+        assert (tmp_path / "doomed.png").exists()
+        filename = delete_meme(conn, uuid, tmp_path)
+        assert filename == "doomed.png"
+        assert not (tmp_path / "doomed.png").exists()
+        mock_thumbs.assert_called_once_with(uuid)
+
+    @patch("memebase.service.delete_thumbnails")
+    def test_handles_missing_file(self, mock_thumbs, tmp_path):
+        conn, uuid = self._setup(tmp_path)
+        (tmp_path / "doomed.png").unlink()
+        filename = delete_meme(conn, uuid, tmp_path)
+        assert filename == "doomed.png"
+        mock_thumbs.assert_called_once_with(uuid)
+
+    @patch("memebase.service.delete_thumbnails")
+    def test_unknown_uuid_raises(self, mock_thumbs, tmp_path):
+        conn, _ = self._setup(tmp_path)
+        with pytest.raises(LookupError):
+            delete_meme(conn, "nonexistent-uuid", tmp_path)

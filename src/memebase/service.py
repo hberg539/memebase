@@ -1,9 +1,11 @@
+import contextlib
 import sqlite3
 import uuid as uuid_mod
 from pathlib import Path
 
 from memebase.db import (
     add_tags,
+    delete_meme_row,
     find_by_sha256,
     get_meme,
     get_meme_filename,
@@ -13,6 +15,7 @@ from memebase.db import (
 )
 from memebase.log import get_logger
 from memebase.schemas import AiSuggestion, Meme, MemeError
+from memebase.thumbnails import delete_thumbnails
 from memebase.util import file_hash, parse_ext, sanitize_filename
 
 log = get_logger(__name__)
@@ -66,6 +69,57 @@ def get_meme_file_path(
     return filename, path, None
 
 
+def rename_meme(
+    conn: sqlite3.Connection,
+    uuid: str,
+    filename: str,
+    new_name_stem: str,
+    memes_dir: Path,
+) -> str:
+    """Rename a meme file on disk and in the DB.
+
+    Returns the new filename.
+    Raises ValueError if stem is empty or unchanged, FileExistsError on collision.
+    """
+    orig = Path(filename)
+    if not new_name_stem.strip():
+        raise ValueError("Name cannot be empty")
+    new_filename = sanitize_filename(new_name_stem + orig.suffix)
+    new_stem = Path(new_filename).stem
+
+    if new_stem == orig.stem:
+        raise ValueError("Name is unchanged")
+
+    new_path = memes_dir / new_filename
+    if new_path.exists():
+        raise FileExistsError("A file with that name already exists")
+
+    (memes_dir / filename).rename(new_path)
+    ext = parse_ext(new_filename)
+    update_filename(conn, uuid, new_filename, ext)
+    return new_filename
+
+
+def delete_meme(
+    conn: sqlite3.Connection,
+    uuid: str,
+    memes_dir: Path,
+) -> str:
+    """Delete a meme from DB and disk.
+
+    Returns the deleted filename.
+    Raises LookupError if the uuid is not found in the DB.
+    """
+    filename = delete_meme_row(conn, uuid)
+    if not filename:
+        raise LookupError("Not found")
+    path = memes_dir / filename
+    if path.exists():
+        path.unlink()
+    delete_thumbnails(uuid)
+    return filename
+
+
 def apply_ai_suggestions(
     conn: sqlite3.Connection,
     uuid: str,
@@ -76,13 +130,8 @@ def apply_ai_suggestions(
 ) -> None:
     """Apply AI-suggested name/description/tags to a meme."""
     if "name" in fields and suggestion.get("name"):
-        orig_ext = Path(filename).suffix
-        new_filename = sanitize_filename(suggestion["name"].strip() + orig_ext)
-        new_path = memes_dir / new_filename
-        if new_filename != filename and not new_path.exists():
-            (memes_dir / filename).rename(new_path)
-            ext = parse_ext(new_filename)
-            update_filename(conn, uuid, new_filename, ext)
+        with contextlib.suppress(FileExistsError, ValueError):
+            rename_meme(conn, uuid, filename, suggestion["name"].strip(), memes_dir)
 
     if "description" in fields and suggestion.get("description"):
         update_description(conn, uuid, suggestion["description"])

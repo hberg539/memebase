@@ -24,7 +24,6 @@ from memebase.common import (
 from memebase.config import load_version
 from memebase.db import (
     add_tags,
-    delete_meme_row,
     get_all_tags,
     get_db,
     get_meme,
@@ -35,19 +34,20 @@ from memebase.db import (
     set_tags,
     update_description,
     update_favorite,
-    update_filename,
 )
 from memebase.log import get_logger
 from memebase.schemas import MemeError
 from memebase.scrape import scrape_url
 from memebase.service import (
     apply_ai_suggestions,
+    delete_meme,
     get_meme_file_path,
     register_meme,
+    rename_meme,
     resolve_unique_path,
 )
-from memebase.thumbnails import delete_thumbnails, get_or_create_thumbnail
-from memebase.util import generate_placeholder_image, parse_ext, sanitize_filename
+from memebase.thumbnails import get_or_create_thumbnail
+from memebase.util import generate_placeholder_image, sanitize_filename
 
 log = get_logger(__name__)
 
@@ -314,20 +314,13 @@ def create_app(config=None):
             # Rename (new_name is just the stem, extension stays)
             new_name_stem = data.get("new_name")
             if new_name_stem is not None:
-                orig = Path(filename)
-                new_filename = sanitize_filename(new_name_stem + orig.suffix)
-                new_stem = Path(new_filename).stem
-
-                if new_stem and new_stem != orig.stem:
-                    new_path = MEMES_DIR / new_filename
-                    if new_path.exists():
-                        return jsonify({"error": "A file with that name already exists"}), 409
-
-                    old_path = MEMES_DIR / filename
-                    old_path.rename(new_path)
-                    ext = parse_ext(new_filename)
-                    update_filename(conn, uuid, new_filename, ext)
+                try:
+                    new_filename = rename_meme(conn, uuid, filename, new_name_stem, MEMES_DIR)
                     log.info("rename: uuid=%s old=%s new=%s", uuid, filename, new_filename)
+                except FileExistsError:
+                    return jsonify({"error": "A file with that name already exists"}), 409
+                except ValueError:
+                    pass
 
             # Update tags
             tags = data.get("tags")
@@ -438,15 +431,12 @@ def create_app(config=None):
         return jsonify({"ok": True})
 
     @app.route("/api/memes/<uuid>", methods=["DELETE"])
-    def delete_meme(uuid):
-        with get_db() as conn:
-            filename = delete_meme_row(conn, uuid)
-            if not filename:
-                return jsonify({"error": "Not found"}), 404
-            path = MEMES_DIR / filename
-            if path.exists():
-                path.unlink()
-            delete_thumbnails(uuid)
+    def delete_meme_route(uuid):
+        try:
+            with get_db() as conn:
+                filename = delete_meme(conn, uuid, MEMES_DIR)
+        except LookupError:
+            return jsonify({"error": "Not found"}), 404
         log.info("delete: uuid=%s filename=%s", uuid, filename)
         return "", 204
 
