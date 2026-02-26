@@ -1,39 +1,8 @@
-import http.client
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from memebase.scrape import scrape_url
-from memebase.service import is_media_url
-
-
-class TestIsMediaUrl:
-    def _mock_response(self, content_type):
-        resp = MagicMock()
-        resp.headers = {"Content-Type": content_type}
-        resp.__enter__ = lambda s: s
-        resp.__exit__ = MagicMock(return_value=False)
-        return resp
-
-    @patch("memebase.service.urllib.request.urlopen")
-    def test_image_content_type(self, mock_urlopen):
-        mock_urlopen.return_value = self._mock_response("image/png")
-        assert is_media_url("https://example.com/pic.png") is True
-
-    @patch("memebase.service.urllib.request.urlopen")
-    def test_video_content_type(self, mock_urlopen):
-        mock_urlopen.return_value = self._mock_response("video/mp4")
-        assert is_media_url("https://example.com/video.mp4") is True
-
-    @patch("memebase.service.urllib.request.urlopen")
-    def test_html_content_type(self, mock_urlopen):
-        mock_urlopen.return_value = self._mock_response("text/html; charset=utf-8")
-        assert is_media_url("https://example.com/page") is False
-
-    @patch("memebase.service.urllib.request.urlopen")
-    def test_error_returns_false(self, mock_urlopen):
-        mock_urlopen.side_effect = http.client.HTTPException("timeout")
-        assert is_media_url("https://example.com/broken") is False
 
 
 def _patch_temp_dir(tmp_path):

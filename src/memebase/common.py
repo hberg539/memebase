@@ -16,18 +16,7 @@ DEFAULT_THEME = "midnight"
 
 DEBUG = os.getenv("MEMEBASE_DEBUG", "1") == "1"
 
-USER_AGENT = "memebase/1.0"
-
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".webm", ".mp4"}
-
-CONTENT_TYPE_TO_EXT = {
-    "image/png": ".png",
-    "image/jpeg": ".jpg",
-    "image/gif": ".gif",
-    "image/webp": ".webp",
-    "video/webm": ".webm",
-    "video/mp4": ".mp4",
-}
 
 CACHE_MAX_AGE = 604800
 

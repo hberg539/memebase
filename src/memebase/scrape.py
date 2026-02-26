@@ -1,9 +1,12 @@
 import shutil
 import threading
+from urllib.parse import unquote, urlparse
 
 from gallery_dl import config as gdl_config
 from gallery_dl import exception as gdl_exception
+from gallery_dl import extractor as gdl_extractor
 from gallery_dl import job as gdl_job
+from gallery_dl.extractor.common import Extractor, Message
 
 from memebase.common import ALLOWED_EXTENSIONS
 from memebase.log import get_logger
@@ -14,7 +17,64 @@ log = get_logger(__name__)
 
 MAX_FILES = 4
 
+_CONTENT_TYPE_EXT = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "video/webm": "webm",
+    "video/mp4": "mp4",
+}
+
 _lock = threading.Lock()
+
+
+class _DirectMediaExtractor(Extractor):
+    """Catch-all extractor for direct media URLs without file extensions.
+
+    Registered after all built-in extractors so it only handles URLs
+    that no other extractor matched.  Does a HEAD request to check
+    Content-Type and yields the URL if it points to supported media.
+    """
+
+    category = "directmedia"
+    subcategory = ""
+    filename_fmt = "{filename}.{extension}"
+    pattern = r"https?://.+"
+
+    def items(self):
+        resp = self.request(self.url, method="HEAD", allow_redirects=True)
+        ct = resp.headers.get("Content-Type", "").split(";")[0].strip().lower()
+
+        ext = _CONTENT_TYPE_EXT.get(ct)
+        if not ext:
+            return
+
+        # Try Content-Disposition header for filename
+        cd = resp.headers.get("Content-Disposition", "")
+        filename = ""
+        if "filename=" in cd:
+            filename = cd.split("filename=")[-1].strip().strip('"').strip("'")
+            if "." in filename:
+                filename = filename.rsplit(".", 1)[0]
+
+        if not filename:
+            path = unquote(urlparse(self.url).path)
+            filename = path.rsplit("/", 1)[-1] or "download"
+            if "." in filename:
+                filename = filename.rsplit(".", 1)[0]
+
+        if not filename:
+            filename = "download"
+
+        data = {"filename": filename, "extension": ext}
+        yield Message.Directory, "", data
+        yield Message.Url, self.url, data
+
+
+# Force all built-in extractors to load, then register our fallback last
+gdl_extractor.find("")
+gdl_extractor.add(_DirectMediaExtractor)
 
 
 class _LimitedDownloadJob(gdl_job.DownloadJob):

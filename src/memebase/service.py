@@ -1,10 +1,7 @@
 import sqlite3
-import urllib.parse
-import urllib.request
 import uuid as uuid_mod
 from pathlib import Path
 
-from memebase.common import ALLOWED_EXTENSIONS, CONTENT_TYPE_TO_EXT, USER_AGENT
 from memebase.db import (
     add_tags,
     find_by_sha256,
@@ -19,23 +16,6 @@ from memebase.schemas import AiSuggestion, Meme, MemeError
 from memebase.util import file_hash, parse_ext, sanitize_filename
 
 log = get_logger(__name__)
-
-
-def is_media_url(url: str) -> bool:
-    """HEAD request to check if URL points directly to a media file.
-
-    Returns True if Content-Type starts with image/ or video/.
-    Returns False for text/html, unknown types, or on any error.
-    """
-    try:
-        req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            ct = resp.headers.get("Content-Type", "")
-            ct = ct.split(";")[0].strip().lower()
-            return ct.startswith(("image/", "video/"))
-    except Exception:
-        log.debug("HEAD request failed for %s, treating as webpage", url)
-        return False
 
 
 def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:
@@ -84,47 +64,6 @@ def get_meme_file_path(
     if not path.exists():
         return filename, path, MemeError.NOT_ON_DISK
     return filename, path, None
-
-
-def download_from_url(url: str) -> tuple[str, bytes]:
-    """Download a file from a URL and return (sanitized_basename, content).
-
-    Raises ValueError on bad scheme, unsupported extension, or download failure.
-    """
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        raise ValueError("Only http and https URLs are supported")
-
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            # Try Content-Disposition for filename
-            cd = resp.headers.get("Content-Disposition", "")
-            filename = None
-            if "filename=" in cd:
-                filename = cd.split("filename=")[-1].strip().strip('"').strip("'")
-
-            if not filename:
-                path_part = urllib.parse.urlparse(url).path
-                filename = Path(path_part).name or "download"
-
-            # Ensure it has an allowed extension
-            ext = Path(filename).suffix.lower()
-            if not ext:
-                ct = resp.headers.get("Content-Type", "")
-                ext = CONTENT_TYPE_TO_EXT.get(ct.split(";")[0].strip(), "")
-                filename += ext
-
-            if Path(filename).suffix.lower() not in ALLOWED_EXTENSIONS:
-                raise ValueError(f"Unsupported file type: {ext or 'unknown'}")
-
-            content = resp.read()
-    except ValueError:
-        raise
-    except Exception as e:
-        raise ValueError(f"Failed to download: {e}") from e
-
-    return sanitize_filename(filename), content
 
 
 def apply_ai_suggestions(

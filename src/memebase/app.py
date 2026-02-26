@@ -42,9 +42,7 @@ from memebase.schemas import MemeError
 from memebase.scrape import scrape_url
 from memebase.service import (
     apply_ai_suggestions,
-    download_from_url,
     get_meme_file_path,
-    is_media_url,
     register_meme,
     resolve_unique_path,
 )
@@ -256,10 +254,7 @@ def create_app(config=None):
             return jsonify({"error": "No URL provided"}), 400
 
         try:
-            if is_media_url(url):
-                downloads = [download_from_url(url)]
-            else:
-                downloads = scrape_url(url)
+            downloads = scrape_url(url)
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
