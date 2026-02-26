@@ -27,6 +27,7 @@ def test_full_user_config_overrides():
             "skip_types": ["gif"],
         },
         "ai": {"enabled": True, "parallel": 8},
+        "scrape": {"max_files": 10},
     }
     result = _deep_merge(_DEFAULTS, user)
     assert result == user

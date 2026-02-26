@@ -37,10 +37,9 @@ class TestScrapeUrl:
         assert results[0][0] == "image.png"
         assert results[0][1] == b"PNG data"
 
-    @patch("memebase.scrape.MAX_FILES", 5)
     @patch("memebase.scrape._LimitedDownloadJob")
     def test_respects_max_files(self, mock_job_cls, tmp_path):
-        """scrape_url caps results at MAX_FILES."""
+        """scrape_url caps results at max_files."""
 
         def fake_run():
             scrape_dir = _find_scrape_dir(tmp_path)
@@ -52,7 +51,7 @@ class TestScrapeUrl:
         mock_job_cls.return_value = mock_job
 
         with _patch_temp_dir(tmp_path):
-            results = scrape_url("https://example.com/post")
+            results = scrape_url("https://example.com/post", max_files=5)
 
         assert len(results) == 5
 

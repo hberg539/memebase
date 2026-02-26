@@ -19,6 +19,9 @@ quality = 80          # output quality (1-100)
 format = "webp"       # "webp" or "jpeg"
 skip_types = ["gif"]  # file extensions to skip, e.g. ["gif", "mp4"]
 
+[scrape]
+max_files = 4  # max media files to download per URL
+
 [ai]
 enabled = false
 # Any litellm-compatible model string works here. Examples:

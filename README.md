@@ -97,6 +97,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `thumbnails.quality` | `80` | Output quality (1-100) |
 | `thumbnails.format` | `"webp"` | Thumbnail format: `"webp"` or `"jpeg"` |
 | `thumbnails.skip_types` | `["gif"]` | File extensions to skip, e.g. `["gif", "mp4"]` |
+| `scrape.max_files` | `4` | Max media files to download per URL |
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off (see [AI auto-detect](#ai-auto-detect)) |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see [Supported models](#supported-models)) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |

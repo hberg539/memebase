@@ -37,6 +37,9 @@ TEST_CONFIG = {
         "parallel": 3,
         "prompt": "Describe this meme. Tags: {tags}",
     },
+    "scrape": {
+        "max_files": 4,
+    },
 }
 
 

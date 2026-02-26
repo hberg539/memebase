@@ -254,7 +254,7 @@ def create_app(config=None):
             return jsonify({"error": "No URL provided"}), 400
 
         try:
-            downloads = scrape_url(url)
+            downloads = scrape_url(url, max_files=config["scrape"]["max_files"])
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 

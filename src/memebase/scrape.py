@@ -15,7 +15,7 @@ from memebase.util import sanitize_filename
 
 log = get_logger(__name__)
 
-MAX_FILES = 4
+_DEFAULT_MAX_FILES = 4
 
 _CONTENT_TYPE_EXT = {
     "image/png": "png",
@@ -92,7 +92,7 @@ class _LimitedDownloadJob(gdl_job.DownloadJob):
             self._max_files = parent._max_files
         else:
             self._counter = [0]
-            self._max_files = max_files if max_files is not None else MAX_FILES
+            self._max_files = max_files if max_files is not None else _DEFAULT_MAX_FILES
 
     def handle_url(self, url, kwdict):
         if self._counter[0] >= self._max_files:
@@ -112,7 +112,7 @@ def _configure_gallery_dl(base_dir: str) -> None:
     gdl_config.set(("output",), "mode", "null")
 
 
-def scrape_url(url: str) -> list[tuple[str, bytes]]:
+def scrape_url(url: str, *, max_files: int = _DEFAULT_MAX_FILES) -> list[tuple[str, bytes]]:
     """Use gallery-dl to scrape media from a URL.
 
     Returns a list of (sanitized_basename, content_bytes) tuples.
@@ -125,7 +125,7 @@ def scrape_url(url: str) -> list[tuple[str, bytes]]:
         with _lock:
             _configure_gallery_dl(str(tmp_path))
             try:
-                _LimitedDownloadJob(url).run()
+                _LimitedDownloadJob(url, max_files=max_files).run()
             except Exception as e:
                 log.warning("scrape: gallery-dl failed for %s: %s", url, e)
                 raise ValueError(f"gallery-dl failed: {e}") from e
@@ -142,7 +142,7 @@ def scrape_url(url: str) -> list[tuple[str, bytes]]:
             content = f.read_bytes()
             results.append((basename, content))
             log.info("scrape: collected %s (%d bytes)", basename, len(content))
-            if len(results) >= MAX_FILES:
+            if len(results) >= max_files:
                 break
     finally:
         shutil.rmtree(tmp_path, ignore_errors=True)
