@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.8.0](https://github.com/hberg539/memebase/compare/v0.7.0...v0.8.0) (2026-02-26)
+
+
+### Features
+
+* add URL scraping via gallery-dl for webpage links ([8a2c9f1](https://github.com/hberg539/memebase/commit/8a2c9f147143dab0ae9fc80505c5f6f8b7482e6c))
+* limit gallery-dl downloads via DownloadJob subclass with global counter ([463d43f](https://github.com/hberg539/memebase/commit/463d43f514ff20241d3920c8600c09753524abf6))
+
+
+### Refactoring
+
+* extract temp directory management into dedicated module ([6665a6e](https://github.com/hberg539/memebase/commit/6665a6e612d81fc236df292fd263432f0ebb951f))
+* move max_files from hardcoded constant to config ([b1648fb](https://github.com/hberg539/memebase/commit/b1648fb995332b8f24b6947a109d73800bfc5d1a))
+* use gallery-dl for all URLs with custom catch-all extractor ([ed5464d](https://github.com/hberg539/memebase/commit/ed5464dbc8541da0cc05a4ebccd714f3e8bf1e7a))
+
+
+### Documentation
+
+* consolidate URL scraping into upload feature bullet ([f4ae476](https://github.com/hberg539/memebase/commit/f4ae47601e4ab723dc4ed99777cbc8fcd0810604))
+* rewrite AI disclaimer ([21dfcf3](https://github.com/hberg539/memebase/commit/21dfcf3a78c974f95c01953bcc256de5dc737b31))
+
+
+### CI/CD
+
+* add GitHub Actions lint workflow ([706ae76](https://github.com/hberg539/memebase/commit/706ae7618a9608b83a61e213fa0a989653dac5e9))
+* run lint on all branches ([43c2ef4](https://github.com/hberg539/memebase/commit/43c2ef49a1373e172d2085aaa59b3353824c629f))
+
 ## [0.7.0](https://github.com/hberg539/memebase/compare/v0.6.0...v0.7.0) (2026-02-24)
 
 
