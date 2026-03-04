@@ -64,9 +64,9 @@ async function uploadFiles(files) {
 		await load(search.value);
 		clearSelection();
 		for (const m of uploaded) {
-			const card = grid.querySelector(`.card[data-uuid="${m.uuid}"]`);
+			const card = grid.querySelector(`.card[data-id="${m.id}"]`);
 			if (card) {
-				selectedUuids.add(m.uuid);
+				selectedIds.add(m.id);
 				card.classList.add("selected");
 			}
 		}
@@ -95,8 +95,8 @@ urlDownload.addEventListener("click", async () => {
 		await load(search.value);
 		clearSelection();
 		for (const m of memes) {
-			selectedUuids.add(m.uuid);
-			const card = grid.querySelector(`.card[data-uuid="${m.uuid}"]`);
+			selectedIds.add(m.id);
+			const card = grid.querySelector(`.card[data-id="${m.id}"]`);
 			if (card) card.classList.add("selected");
 		}
 		updateSelectBar();
