@@ -40,27 +40,27 @@ def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool
     Returns (meme_dict, is_duplicate).
     """
     h = file_hash(file_path)
-    existing_uuid = find_by_sha256(conn, h)
-    if existing_uuid:
-        return get_meme(conn, existing_uuid), True
+    existing_id = find_by_sha256(conn, h)
+    if existing_id:
+        return get_meme(conn, existing_id), True
 
-    new_uuid = str(uuid_mod.uuid4())
+    new_id = str(uuid_mod.uuid4())
     file_size = file_path.stat().st_size
     basename = file_path.name
     ext = parse_ext(basename)
-    insert_meme(conn, new_uuid, h, file_size, basename, ext)
-    return get_meme(conn, new_uuid), False
+    insert_meme(conn, new_id, h, file_size, basename, ext)
+    return get_meme(conn, new_id), False
 
 
 def get_meme_file_path(
-    conn: sqlite3.Connection, uuid: str, memes_dir: Path
+    conn: sqlite3.Connection, meme_id: str, memes_dir: Path
 ) -> tuple[str | None, Path | None, str | None]:
     """Look up filename and verify file exists on disk.
 
     Returns (filename, path, error_reason).
     error_reason is None on success, "not_in_db" or "not_on_disk" on failure.
     """
-    filename = get_meme_filename(conn, uuid)
+    filename = get_meme_filename(conn, meme_id)
     if not filename:
         return None, None, MemeError.NOT_IN_DB
     path = memes_dir / filename
@@ -71,7 +71,7 @@ def get_meme_file_path(
 
 def rename_meme(
     conn: sqlite3.Connection,
-    uuid: str,
+    meme_id: str,
     filename: str,
     new_name_stem: str,
     memes_dir: Path,
@@ -96,33 +96,33 @@ def rename_meme(
 
     (memes_dir / filename).rename(new_path)
     ext = parse_ext(new_filename)
-    update_filename(conn, uuid, new_filename, ext)
+    update_filename(conn, meme_id, new_filename, ext)
     return new_filename
 
 
 def delete_meme(
     conn: sqlite3.Connection,
-    uuid: str,
+    meme_id: str,
     memes_dir: Path,
 ) -> str:
     """Delete a meme from DB and disk.
 
     Returns the deleted filename.
-    Raises LookupError if the uuid is not found in the DB.
+    Raises LookupError if the meme_id is not found in the DB.
     """
-    filename = delete_meme_row(conn, uuid)
+    filename = delete_meme_row(conn, meme_id)
     if not filename:
         raise LookupError("Not found")
     path = memes_dir / filename
     if path.exists():
         path.unlink()
-    delete_thumbnails(uuid)
+    delete_thumbnails(meme_id)
     return filename
 
 
 def apply_ai_suggestions(
     conn: sqlite3.Connection,
-    uuid: str,
+    meme_id: str,
     filename: str,
     suggestion: AiSuggestion,
     fields: list[str],
@@ -131,10 +131,10 @@ def apply_ai_suggestions(
     """Apply AI-suggested name/description/tags to a meme."""
     if "name" in fields and suggestion.get("name"):
         with contextlib.suppress(FileExistsError, ValueError):
-            rename_meme(conn, uuid, filename, suggestion["name"].strip(), memes_dir)
+            rename_meme(conn, meme_id, filename, suggestion["name"].strip(), memes_dir)
 
     if "description" in fields and suggestion.get("description"):
-        update_description(conn, uuid, suggestion["description"])
+        update_description(conn, meme_id, suggestion["description"])
 
     if "tags" in fields and suggestion.get("tags"):
-        add_tags(conn, uuid, suggestion["tags"])
+        add_tags(conn, meme_id, suggestion["tags"])

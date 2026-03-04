@@ -1,25 +1,25 @@
 /* -- State -- */
 
-const selectedUuids = new Set();
+const selectedIds = new Set();
 const selectBar = document.getElementById("select-bar");
 const selCount = document.getElementById("sel-count");
 
 /* -- Selection management -- */
 
 function updateSelectBar() {
-	const n = selectedUuids.size;
+	const n = selectedIds.size;
 	selCount.textContent = `${n} selected`;
 	selectBar.classList.toggle("visible", n > 0);
 }
 
 function restoreSelection() {
 	grid.querySelectorAll(".card").forEach((c) => {
-		if (selectedUuids.has(c.dataset.uuid)) c.classList.add("selected");
+		if (selectedIds.has(c.dataset.id)) c.classList.add("selected");
 	});
 }
 
 function clearSelection() {
-	selectedUuids.clear();
+	selectedIds.clear();
 	grid.querySelectorAll(".card.selected").forEach((c) => c.classList.remove("selected"));
 	updateSelectBar();
 }
@@ -34,12 +34,12 @@ grid.addEventListener(
 		if (!card) return;
 		e.preventDefault();
 		e.stopPropagation();
-		const u = card.dataset.uuid;
-		if (selectedUuids.has(u)) {
-			selectedUuids.delete(u);
+		const id = card.dataset.id;
+		if (selectedIds.has(id)) {
+			selectedIds.delete(id);
 			card.classList.remove("selected");
 		} else {
-			selectedUuids.add(u);
+			selectedIds.add(id);
 			card.classList.add("selected");
 		}
 		updateSelectBar();
@@ -52,7 +52,7 @@ grid.addEventListener(
 
 document.getElementById("sel-all").addEventListener("click", () => {
 	grid.querySelectorAll(".card").forEach((c) => {
-		selectedUuids.add(c.dataset.uuid);
+		selectedIds.add(c.dataset.id);
 		c.classList.add("selected");
 	});
 	updateSelectBar();
@@ -62,7 +62,7 @@ document.getElementById("sel-all").addEventListener("click", () => {
 document.getElementById("sel-clear").addEventListener("click", clearSelection);
 
 document.addEventListener("keydown", (e) => {
-	if (e.key === "Escape" && selectedUuids.size && !anyDialogOpen()) {
+	if (e.key === "Escape" && selectedIds.size && !anyDialogOpen()) {
 		clearSelection();
 	}
 });
@@ -72,15 +72,15 @@ document.addEventListener("keydown", (e) => {
 const selDelBtn = document.getElementById("sel-delete");
 const resetSelDelete = confirmButton(
 	selDelBtn,
-	() => `Delete ${selectedUuids.size}?`,
+	() => `Delete ${selectedIds.size}?`,
 	async () => {
-		const count = selectedUuids.size;
+		const count = selectedIds.size;
 		try {
-			const promises = [...selectedUuids].map((u) => Api.deleteMeme(u));
+			const promises = [...selectedIds].map((id) => Api.deleteMeme(id));
 			await Promise.all(promises);
 			showAlert(`Deleted ${count} meme${count > 1 ? "s" : ""}`, "success");
-			selectedUuids.forEach((u) => {
-				const card = grid.querySelector(`.card[data-uuid="${u}"]`);
+			selectedIds.forEach((id) => {
+				const card = grid.querySelector(`.card[data-id="${id}"]`);
 				if (card) card.classList.add("removing");
 			});
 			await new Promise((r) => setTimeout(r, 200));
@@ -100,7 +100,7 @@ const bulkAdd = document.getElementById("bulk-add");
 const bulkRemove = document.getElementById("bulk-remove");
 
 document.getElementById("sel-tag").addEventListener("click", () => {
-	bulkTitle.textContent = `Edit tags for ${selectedUuids.size} memes`;
+	bulkTitle.textContent = `Edit tags for ${selectedIds.size} memes`;
 	bulkAdd.value = "";
 	bulkRemove.value = "";
 	bulkModal.showModal();
@@ -121,7 +121,7 @@ document.getElementById("bulk-save").addEventListener("click", async () => {
 		bulkModal.close();
 		return;
 	}
-	await Api.bulkTags([...selectedUuids], add, remove);
+	await Api.bulkTags([...selectedIds], add, remove);
 	bulkModal.close();
 	showAlert("Tags updated", "success");
 	await load(search.value);
@@ -136,35 +136,35 @@ if (!window.AI_ENABLED) selAutoBtn.style.display = "none";
 selAutoBtn.addEventListener("click", () => {
 	const autoModal = document.getElementById("auto-modal");
 	const autoTitle = document.getElementById("auto-title");
-	autoTitle.textContent = `Auto-detect for ${selectedUuids.size} memes`;
+	autoTitle.textContent = `Auto-detect for ${selectedIds.size} memes`;
 	document.getElementById("auto-name").checked = true;
 	document.getElementById("auto-desc").checked = true;
 	document.getElementById("auto-tags").checked = true;
 	registerAutoCallback(async (fields, startBtn) => {
 		startBtn.classList.add("loading");
-		const uuids = [...selectedUuids];
-		const total = uuids.length;
+		const ids = [...selectedIds];
+		const total = ids.length;
 		let done = 0;
 		const failed = [];
 		const parallel = window.AI_PARALLEL || 3;
 		autoTitle.textContent = `Processing 1/${total}...`;
 
-		async function processOne(u) {
+		async function processOne(id) {
 			done++;
 			autoTitle.textContent = `Processing ${done}/${total}...`;
 			const label =
-				document.querySelector(`.card[data-uuid="${u}"]`)?.dataset.filename || u.slice(0, 8);
+				document.querySelector(`.card[data-id="${id}"]`)?.dataset.filename || id.slice(0, 8);
 			try {
 				let suggestion;
 				try {
-					suggestion = await Api.autoDetect(u);
+					suggestion = await Api.autoDetect(id);
 				} catch (e) {
-					failed.push(u);
+					failed.push(id);
 					showAlert(`Detection failed for ${label}`, "error");
 					return;
 				}
 				if (suggestion.error) {
-					failed.push(u);
+					failed.push(id);
 					showAlert(`Detection failed for ${label}: ${suggestion.error}`, "error");
 					return;
 				}
@@ -174,19 +174,19 @@ selAutoBtn.addEventListener("click", () => {
 					body.description = suggestion.description;
 				if (fields.includes("tags") && suggestion.tags) body.tags = suggestion.tags;
 				if (Object.keys(body).length) {
-					await Api.updateMeme(u, body);
+					await Api.updateMeme(id, body);
 				}
-				showAlert(`Detected: ${suggestion.name || u.slice(0, 8)}`, "success");
+				showAlert(`Detected: ${suggestion.name || id.slice(0, 8)}`, "success");
 			} catch (e) {
-				failed.push(u);
-				showAlert(`${suggestion?.name || u.slice(0, 8)}: ${e.message}`, "error");
+				failed.push(id);
+				showAlert(`${suggestion?.name || id.slice(0, 8)}: ${e.message}`, "error");
 			} finally {
 				await load(search.value);
 				restoreSelection();
 			}
 		}
 
-		await runParallelQueue(uuids, parallel, processOne);
+		await runParallelQueue(ids, parallel, processOne);
 
 		if (failed.length) {
 			await Api.bulkTags(failed, ["auto-failed"], []);

@@ -50,78 +50,80 @@ def init_db() -> None:
 # ---------------------------------------------------------------------------
 
 
-def get_meme(conn: sqlite3.Connection, uuid: str) -> Meme | None:
-    """Get a meme dict with tags by uuid, or None if not found."""
+def get_meme(conn: sqlite3.Connection, meme_id: str) -> Meme | None:
+    """Get a meme dict with tags by id, or None if not found."""
     row = conn.execute(
-        "SELECT uuid, sha256, size, filename, ext, description, favorite, created_at "
-        "FROM memes WHERE uuid = ?",
-        (uuid,),
+        "SELECT id, sha256, size, filename, ext, description, favorite, created_at "
+        "FROM memes WHERE id = ?",
+        (meme_id,),
     ).fetchone()
     if not row:
         return None
     d = dict(row)
-    tags = conn.execute("SELECT tag FROM tags WHERE uuid = ? ORDER BY tag", (uuid,)).fetchall()
+    tags = conn.execute(
+        "SELECT tag FROM tags WHERE meme_id = ? ORDER BY tag", (meme_id,)
+    ).fetchall()
     d["tags"] = [t["tag"] for t in tags]
     return d
 
 
-def get_meme_filename(conn: sqlite3.Connection, uuid: str) -> str | None:
+def get_meme_filename(conn: sqlite3.Connection, meme_id: str) -> str | None:
     """Get just the filename for a meme, or None if not found."""
-    row = conn.execute("SELECT filename FROM memes WHERE uuid = ?", (uuid,)).fetchone()
+    row = conn.execute("SELECT filename FROM memes WHERE id = ?", (meme_id,)).fetchone()
     return row["filename"] if row else None
 
 
-def get_meme_for_serving(conn: sqlite3.Connection, uuid: str) -> tuple[str, str] | None:
+def get_meme_for_serving(conn: sqlite3.Connection, meme_id: str) -> tuple[str, str] | None:
     """Get (filename, sha256) for serving a meme file, or None if not found."""
-    row = conn.execute("SELECT filename, sha256 FROM memes WHERE uuid = ?", (uuid,)).fetchone()
+    row = conn.execute("SELECT filename, sha256 FROM memes WHERE id = ?", (meme_id,)).fetchone()
     return (row["filename"], row["sha256"]) if row else None
 
 
 def find_by_sha256(conn: sqlite3.Connection, sha256: str) -> str | None:
-    """Find a meme uuid by its sha256 hash. Returns uuid string or None."""
-    row = conn.execute("SELECT uuid FROM memes WHERE sha256 = ?", (sha256,)).fetchone()
-    return row["uuid"] if row else None
+    """Find a meme id by its sha256 hash. Returns id string or None."""
+    row = conn.execute("SELECT id FROM memes WHERE sha256 = ?", (sha256,)).fetchone()
+    return row["id"] if row else None
 
 
 def insert_meme(
-    conn: sqlite3.Connection, uuid: str, sha256: str, size: int, filename: str, ext: str
+    conn: sqlite3.Connection, meme_id: str, sha256: str, size: int, filename: str, ext: str
 ) -> None:
     """Insert a new meme row."""
     conn.execute(
-        "INSERT INTO memes (uuid, sha256, size, filename, ext) VALUES (?, ?, ?, ?, ?)",
-        (uuid, sha256, size, filename, ext),
+        "INSERT INTO memes (id, sha256, size, filename, ext) VALUES (?, ?, ?, ?, ?)",
+        (meme_id, sha256, size, filename, ext),
     )
 
 
-def update_favorite(conn: sqlite3.Connection, uuid: str, favorite: bool) -> None:
+def update_favorite(conn: sqlite3.Connection, meme_id: str, favorite: bool) -> None:
     """Set the favorite flag (0 or 1)."""
     conn.execute(
-        "UPDATE memes SET favorite = ?, updated_at = datetime('now') WHERE uuid = ?",
-        (1 if favorite else 0, uuid),
+        "UPDATE memes SET favorite = ?, updated_at = datetime('now') WHERE id = ?",
+        (1 if favorite else 0, meme_id),
     )
 
 
-def update_description(conn: sqlite3.Connection, uuid: str, description: str) -> None:
+def update_description(conn: sqlite3.Connection, meme_id: str, description: str) -> None:
     """Update the description text."""
     conn.execute(
-        "UPDATE memes SET description = ?, updated_at = datetime('now') WHERE uuid = ?",
-        (description, uuid),
+        "UPDATE memes SET description = ?, updated_at = datetime('now') WHERE id = ?",
+        (description, meme_id),
     )
 
 
-def update_filename(conn: sqlite3.Connection, uuid: str, filename: str, ext: str) -> None:
+def update_filename(conn: sqlite3.Connection, meme_id: str, filename: str, ext: str) -> None:
     """Update the stored filename and extension."""
     conn.execute(
-        "UPDATE memes SET filename = ?, ext = ?, updated_at = datetime('now') WHERE uuid = ?",
-        (filename, ext, uuid),
+        "UPDATE memes SET filename = ?, ext = ?, updated_at = datetime('now') WHERE id = ?",
+        (filename, ext, meme_id),
     )
 
 
-def delete_meme_row(conn: sqlite3.Connection, uuid: str) -> str | None:
+def delete_meme_row(conn: sqlite3.Connection, meme_id: str) -> str | None:
     """Delete a meme row, returning the filename (for file cleanup), or None if not found."""
     row = conn.execute(
-        "DELETE FROM memes WHERE uuid = ? RETURNING filename",
-        (uuid,),
+        "DELETE FROM memes WHERE id = ? RETURNING filename",
+        (meme_id,),
     ).fetchone()
     return row["filename"] if row else None
 
@@ -137,34 +139,34 @@ def get_all_tags(conn: sqlite3.Connection) -> list[str]:
     return [r["tag"] for r in rows]
 
 
-def set_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
+def set_tags(conn: sqlite3.Connection, meme_id: str, tags: list[str]) -> None:
     """Replace all tags for a meme."""
-    conn.execute("DELETE FROM tags WHERE uuid = ?", (uuid,))
+    conn.execute("DELETE FROM tags WHERE meme_id = ?", (meme_id,))
     normalized = normalize_tags(tags)
     if normalized:
         conn.executemany(
-            "INSERT INTO tags (uuid, tag) VALUES (?, ?)",
-            [(uuid, tag) for tag in normalized],
+            "INSERT INTO tags (meme_id, tag) VALUES (?, ?)",
+            [(meme_id, tag) for tag in normalized],
         )
 
 
-def add_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
+def add_tags(conn: sqlite3.Connection, meme_id: str, tags: list[str]) -> None:
     """Add tags to a meme (ignores duplicates)."""
     normalized = normalize_tags(tags)
     if normalized:
         conn.executemany(
-            "INSERT OR IGNORE INTO tags (uuid, tag) VALUES (?, ?)",
-            [(uuid, tag) for tag in normalized],
+            "INSERT OR IGNORE INTO tags (meme_id, tag) VALUES (?, ?)",
+            [(meme_id, tag) for tag in normalized],
         )
 
 
-def remove_tags(conn: sqlite3.Connection, uuid: str, tags: list[str]) -> None:
+def remove_tags(conn: sqlite3.Connection, meme_id: str, tags: list[str]) -> None:
     """Remove specific tags from a meme."""
     normalized = normalize_tags(tags)
     if normalized:
         conn.executemany(
-            "DELETE FROM tags WHERE uuid = ? AND tag = ?",
-            [(uuid, tag) for tag in normalized],
+            "DELETE FROM tags WHERE meme_id = ? AND tag = ?",
+            [(meme_id, tag) for tag in normalized],
         )
 
 
@@ -195,7 +197,7 @@ def _build_filter_clauses(
             like = f"%{w}%"
             search_parts.append(
                 "(m.filename LIKE ? OR m.description LIKE ? "
-                "OR EXISTS (SELECT 1 FROM tags ts WHERE ts.uuid = m.uuid AND ts.tag LIKE ?))"
+                "OR EXISTS (SELECT 1 FROM tags ts WHERE ts.meme_id = m.id AND ts.tag LIKE ?))"
             )
             search_params.extend([like, like, like])
 
@@ -205,7 +207,7 @@ def _build_filter_clauses(
     tag_parts: list[str] = []
     tag_params: list[str] = []
     for tf in tag_filters:
-        tag_parts.append("EXISTS (SELECT 1 FROM tags tf WHERE tf.uuid = m.uuid AND tf.tag = ?)")
+        tag_parts.append("EXISTS (SELECT 1 FROM tags tf WHERE tf.meme_id = m.id AND tf.tag = ?)")
         tag_params.append(tf)
 
     fav_parts = ["m.favorite = 1"] if fav_filter else []
@@ -243,8 +245,8 @@ def _get_facet_counts(
     all_exts = {r["ext"]: r["c"] for r in all_exts_rows if r["ext"]}
 
     all_tags_rows = conn.execute(
-        f"""SELECT t.tag, COUNT(DISTINCT m.uuid) as c
-            FROM memes m JOIN tags t ON m.uuid = t.uuid
+        f"""SELECT t.tag, COUNT(DISTINCT m.id) as c
+            FROM memes m JOIN tags t ON m.id = t.meme_id
             {_build_where(["1=1", *search_parts])}
             GROUP BY t.tag ORDER BY t.tag""",
         search_params,
@@ -270,8 +272,8 @@ def _get_facet_counts(
     tag_facet_params = search_params + ext_params + tag_params
     tag_facet_where = _build_where(["1=1", *tag_facet_parts])
     tag_rows = conn.execute(
-        f"""SELECT t.tag, COUNT(DISTINCT m.uuid) as c
-            FROM memes m JOIN tags t ON m.uuid = t.uuid
+        f"""SELECT t.tag, COUNT(DISTINCT m.id) as c
+            FROM memes m JOIN tags t ON m.id = t.meme_id
             {tag_facet_where}
             GROUP BY t.tag""",
         tag_facet_params,
@@ -325,7 +327,7 @@ def query_memes(
     # Fetch one page of memes with all columns
     offset = (page - 1) * page_size
     rows = conn.execute(
-        f"SELECT m.uuid, m.sha256, m.size, m.filename, m.ext, m.description, "
+        f"SELECT m.id, m.sha256, m.size, m.filename, m.ext, m.description, "
         f"m.favorite, m.created_at "
         f"FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
         [*all_params, page_size, offset],
@@ -335,20 +337,20 @@ def query_memes(
         return {"memes": [], "total": total, "filters": filters}
 
     # Batch-fetch tags for all memes in a single query
-    uuids = [row["uuid"] for row in rows]
-    placeholders = ",".join("?" * len(uuids))
+    ids = [row["id"] for row in rows]
+    placeholders = ",".join("?" * len(ids))
     tag_rows = conn.execute(
-        f"SELECT uuid, tag FROM tags WHERE uuid IN ({placeholders}) ORDER BY tag",
-        uuids,
+        f"SELECT meme_id, tag FROM tags WHERE meme_id IN ({placeholders}) ORDER BY tag",
+        ids,
     ).fetchall()
 
-    tags_by_uuid: dict[str, list[str]] = {u: [] for u in uuids}
+    tags_by_id: dict[str, list[str]] = {i: [] for i in ids}
     for tr in tag_rows:
-        tags_by_uuid[tr["uuid"]].append(tr["tag"])
+        tags_by_id[tr["meme_id"]].append(tr["tag"])
 
     memes: list[Meme] = []
     for row in rows:
-        meme: Meme = {**dict(row), "tags": tags_by_uuid[row["uuid"]]}
+        meme: Meme = {**dict(row), "tags": tags_by_id[row["id"]]}
         memes.append(meme)
 
     return {"memes": memes, "total": total, "filters": filters}

@@ -116,14 +116,14 @@ def _generate_video_thumbnail(source: Path, dest: Path, cfg: dict) -> Path | Non
         tmp_frame_path.unlink(missing_ok=True)
 
 
-def delete_thumbnails(uuid: str) -> None:
-    """Remove all cached thumbnails for a uuid."""
-    for path in THUMBNAILS_DIR.glob(f"{uuid}.*"):
+def delete_thumbnails(meme_id: str) -> None:
+    """Remove all cached thumbnails for a meme."""
+    for path in THUMBNAILS_DIR.glob(f"{meme_id}.*"):
         path.unlink()
         log.info("removed thumbnail: %s", path.name)
 
 
-def get_or_create_thumbnail(uuid: str, source_path: Path, cfg: dict) -> Path | None:
+def get_or_create_thumbnail(meme_id: str, source_path: Path, cfg: dict) -> Path | None:
     """Return cached or freshly generated thumbnail path, or None on failure."""
     if not cfg["enabled"]:
         return None
@@ -133,14 +133,14 @@ def get_or_create_thumbnail(uuid: str, source_path: Path, cfg: dict) -> Path | N
         return None
 
     _, thumb_ext = THUMB_FORMATS[cfg["format"]]
-    dest = THUMBNAILS_DIR / f"{uuid}{thumb_ext}"
+    dest = THUMBNAILS_DIR / f"{meme_id}{thumb_ext}"
 
     # Serve cached thumbnail
     if dest.exists():
         return dest
 
     # Current format doesn't exist - clear old format files before generating
-    delete_thumbnails(uuid)
+    delete_thumbnails(meme_id)
 
     THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 

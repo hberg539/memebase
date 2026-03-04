@@ -45,14 +45,14 @@ docker-compose up          # Run with Docker
 
 ## Key Design Decisions
 
-- **UUID primary key**: Memes use a generated UUID as PK, with SHA256 as a unique field for deduplication
+- **ID primary key**: Memes use a generated UUID as PK (column named `id`), with SHA256 as a unique field for deduplication
 - **SHA256 deduplication**: Files are hashed on upload to prevent duplicates
 - **Faceted search**: `/api/memes` recalculates filter counts excluding each dimension (extension, tag, favorite) so counts stay accurate as filters are applied
 - **Optimistic UI**: Frontend updates state immediately, then syncs with backend
 
 ## Database Schema
 
-Two tables: `memes` (uuid PK, sha256 UNIQUE, size, filename, description, favorite, timestamps) and `tags` (uuid + tag compound PK, cascading delete from memes).
+Two tables: `memes` (id PK, sha256 UNIQUE, size, filename, description, favorite, timestamps) and `tags` (meme_id + tag compound PK, cascading delete from memes).
 
 ## Migrations
 

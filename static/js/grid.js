@@ -44,7 +44,7 @@ function getPerPage() {
 /* -- Card template -- */
 
 function buildCardHtml(m, isNew) {
-	const src = `/memes/${m.uuid}/${encodeURIComponent(m.filename)}`;
+	const src = `/memes/${m.id}/${encodeURIComponent(m.filename)}`;
 	const ext = m.ext;
 	const thumbEnabled = window.THUMBNAILS_ENABLED;
 	const skipTypes = window.THUMBNAILS_SKIP_TYPES || [];
@@ -52,7 +52,7 @@ function buildCardHtml(m, isNew) {
 	let media;
 	if (useThumb) {
 		const thumbExt = window.THUMBNAILS_FORMAT === "jpeg" ? "jpg" : "webp";
-		media = `<img src="/thumbnails/${m.uuid}.${thumbExt}" alt="${esc(m.filename)}" loading="lazy">`;
+		media = `<img src="/thumbnails/${m.id}.${thumbExt}" alt="${esc(m.filename)}" loading="lazy">`;
 	} else if (isVideo(m.filename)) {
 		media = `<video src="${src}" muted loop preload="metadata"></video>`;
 	} else {
@@ -62,7 +62,7 @@ function buildCardHtml(m, isNew) {
 		? `<div class="card-tags">${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`
 		: "";
 	return `
-    <div class="card${isNew ? " card-new" : ""}" data-uuid="${esc(m.uuid)}" data-filename="${esc(m.filename)}" data-desc="${esc(m.description)}" data-tags="${esc(m.tags.join(","))}" data-created="${esc(m.created_at || "")}" data-fav="${m.favorite || 0}" data-size="${m.size || 0}">
+    <div class="card${isNew ? " card-new" : ""}" data-id="${esc(m.id)}" data-filename="${esc(m.filename)}" data-desc="${esc(m.description)}" data-tags="${esc(m.tags.join(","))}" data-created="${esc(m.created_at || "")}" data-fav="${m.favorite || 0}" data-size="${m.size || 0}">
       <button class="btn-fav${m.favorite ? " active" : ""}" title="Favorite">${icon(m.favorite ? "heart" : "heart", 18)}</button>
       <button class="btn-copy" data-src="${src}" data-filename="${esc(m.filename)}">${icon(canCopy(m.filename) ? "clipboard" : "download", 18)}</button>
       ${media}
@@ -133,19 +133,17 @@ function buildFilters(filters) {
 
 /* -- Grid rendering -- */
 
-let prevUuids = new Set();
+let prevIds = new Set();
 function renderGrid() {
 	const memes = allMemes;
 	if (!memes.length) {
-		prevUuids = new Set();
+		prevIds = new Set();
 		grid.innerHTML = '<div class="grid-empty">No memes found</div>';
 		return;
 	}
-	const newUuids = new Set(memes.map((m) => m.uuid));
-	grid.innerHTML = memes
-		.map((m) => buildCardHtml(m, !prevUuids.has(m.uuid) && prevUuids.size))
-		.join("");
-	prevUuids = newUuids;
+	const newIds = new Set(memes.map((m) => m.id));
+	grid.innerHTML = memes.map((m) => buildCardHtml(m, !prevIds.has(m.id) && prevIds.size)).join("");
+	prevIds = newIds;
 }
 
 /* -- Pagination -- */
@@ -211,7 +209,7 @@ paginationEl.addEventListener("click", async (e) => {
 	const btn = e.target.closest(".page-btn");
 	if (!btn || btn.disabled) return;
 	currentPage = Number.parseInt(btn.dataset.page);
-	prevUuids = new Set();
+	prevIds = new Set();
 	window.scrollTo({ top: 0 });
 	await load(search.value);
 });
@@ -223,7 +221,7 @@ const triggerSearch = () => {
 	activeTagFilters.clear();
 	activeFavFilter = false;
 	currentPage = 1;
-	prevUuids = new Set();
+	prevIds = new Set();
 	load(search.value);
 };
 search.addEventListener("input", () => {
@@ -235,7 +233,7 @@ search.addEventListener("keydown", (e) => {
 });
 sortSel.addEventListener("change", () => {
 	currentPage = 1;
-	prevUuids = new Set();
+	prevIds = new Set();
 	load(search.value);
 });
 
@@ -246,7 +244,7 @@ function resetView() {
 	activeTagFilters.clear();
 	activeFavFilter = false;
 	currentPage = 1;
-	prevUuids = new Set();
+	prevIds = new Set();
 	clearSelection();
 	load();
 }
@@ -267,6 +265,6 @@ filtersEl.addEventListener("click", (e) => {
 		else activeTagFilters.add(tag);
 	}
 	currentPage = 1;
-	prevUuids = new Set();
+	prevIds = new Set();
 	load(search.value);
 });

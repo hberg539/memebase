@@ -7,7 +7,7 @@ const mExt = document.getElementById("m-ext");
 const mTags = document.getElementById("m-tags");
 const mDesc = document.getElementById("m-desc");
 const mDate = document.getElementById("m-date");
-let currentUuid = null;
+let currentId = null;
 
 const autoOpenBtn = document.getElementById("m-auto-open");
 if (!window.AI_ENABLED) autoOpenBtn.style.display = "none";
@@ -25,7 +25,7 @@ grid.addEventListener("click", (e) => {
 		favBtn.innerHTML = icon("heart", 18);
 		favBtn.classList.toggle("active", !!newFav);
 		refreshIcons();
-		Api.updateMeme(card.dataset.uuid, { favorite: newFav });
+		Api.updateMeme(card.dataset.id, { favorite: newFav });
 		return;
 	}
 	const copyBtn = e.target.closest(".btn-copy");
@@ -38,10 +38,10 @@ grid.addEventListener("click", (e) => {
 	}
 	const card = e.target.closest(".card");
 	if (!card) return;
-	currentUuid = card.dataset.uuid;
+	currentId = card.dataset.id;
 	const filename = card.dataset.filename;
 	const [stem, ext] = splitExt(filename);
-	const src = `/memes/${currentUuid}/${encodeURIComponent(filename)}`;
+	const src = `/memes/${currentId}/${encodeURIComponent(filename)}`;
 	if (isVideo(filename)) {
 		mMedia.innerHTML = `<video src="${src}" controls loop autoplay></video>`;
 	} else {
@@ -72,7 +72,7 @@ grid.addEventListener("click", (e) => {
 
 document.getElementById("m-fav").addEventListener("click", async () => {
 	const mFav = document.getElementById("m-fav");
-	const card = grid.querySelector(`.card[data-uuid="${currentUuid}"]`);
+	const card = grid.querySelector(`.card[data-id="${currentId}"]`);
 	const newFav = card && card.dataset.fav === "1" ? 0 : 1;
 	if (card) {
 		card.dataset.fav = newFav;
@@ -85,7 +85,7 @@ document.getElementById("m-fav").addEventListener("click", async () => {
 	mFav.innerHTML = `${icon("heart", 14)} Favorite`;
 	mFav.classList.toggle("active", !!newFav);
 	refreshIcons();
-	await Api.updateMeme(currentUuid, { favorite: newFav });
+	await Api.updateMeme(currentId, { favorite: newFav });
 });
 
 /* -- Copy / Download -- */
@@ -102,10 +102,10 @@ document.getElementById("m-copy").addEventListener("click", () => {
 
 const resetDel = confirmButton(delBtn, "Really delete?", async () => {
 	try {
-		await Api.deleteMeme(currentUuid);
+		await Api.deleteMeme(currentId);
 		modal.close();
 		showAlert(`Deleted ${mName.value}${mExt.textContent}`, "success");
-		const card = grid.querySelector(`.card[data-uuid="${currentUuid}"]`);
+		const card = grid.querySelector(`.card[data-id="${currentId}"]`);
 		if (card) {
 			card.classList.add("removing");
 			await new Promise((r) => setTimeout(r, 200));
@@ -127,12 +127,12 @@ autoOpenBtn.addEventListener("click", () => {
 	registerAutoCallback(async (fields, startBtn) => {
 		startBtn.classList.add("loading");
 		try {
-			const data = await Api.autoDetect(currentUuid);
+			const data = await Api.autoDetect(currentId);
 			if (fields.includes("name") && data.name) mName.value = data.name;
 			if (fields.includes("description") && data.description) mDesc.value = data.description;
 			if (fields.includes("tags") && data.tags) mTags.value = data.tags.join(", ");
 		} catch (e) {
-			showAlert(`${mName.value}${mExt.textContent}: Auto failed — ${e.message}`, "error");
+			showAlert(`${mName.value}${mExt.textContent}: Auto failed - ${e.message}`, "error");
 		} finally {
 			startBtn.classList.remove("loading");
 			autoModal.close();
@@ -171,7 +171,7 @@ document.getElementById("m-save").addEventListener("click", async () => {
 		.map((t) => t.trim())
 		.filter(Boolean);
 	try {
-		await Api.updateMeme(currentUuid, body);
+		await Api.updateMeme(currentId, body);
 	} catch (e) {
 		showAlert(`${mName.value}${mExt.textContent}: ${e.message}`, "error");
 		return;

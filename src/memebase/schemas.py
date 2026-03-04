@@ -59,7 +59,7 @@ class AiSuggestion(TypedDict, total=False):
 
 
 class Meme(TypedDict):
-    uuid: str
+    id: str
     sha256: str
     size: int
     filename: str

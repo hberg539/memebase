@@ -8,7 +8,7 @@ from memebase.app import create_app
 from memebase.schemas import MemeError
 
 FAKE_MEME = {
-    "uuid": "test-uuid-1234",
+    "id": "test-id-1234",
     "sha256": "abc123",
     "size": 100,
     "filename": "test.png",
@@ -84,7 +84,7 @@ class TestUploadMemes:
         assert resp.status_code == 201
         data = resp.get_json()
         assert len(data) == 1
-        assert data[0]["uuid"] == "test-uuid-1234"
+        assert data[0]["id"] == "test-id-1234"
         assert dest.exists()
 
     def test_duplicate_marked(self, client, tmp_path):
@@ -134,7 +134,7 @@ class TestUploadFromUrl:
         assert resp.status_code == 201
         data = resp.get_json()
         assert len(data) == 1
-        assert data[0]["uuid"] == "test-uuid-1234"
+        assert data[0]["id"] == "test-id-1234"
         assert dest.read_bytes() == b"imgdata"
 
     def test_duplicate_returns_200(self, client, tmp_path):
@@ -174,7 +174,7 @@ class TestUpdateMeme:
             patch("memebase.app.update_favorite") as mock_fav,
             patch("memebase.app.get_meme", return_value={**FAKE_MEME, "favorite": 1}),
         ):
-            resp = client.put("/api/memes/test-uuid-1234", json={"favorite": True})
+            resp = client.put("/api/memes/test-id-1234", json={"favorite": True})
         assert resp.status_code == 200
         mock_fav.assert_called_once()
         assert resp.get_json()["favorite"] == 1
@@ -191,7 +191,7 @@ class TestUpdateMeme:
                 "memebase.app.get_meme", return_value={**FAKE_MEME, "description": "a funny meme"}
             ),
         ):
-            resp = client.put("/api/memes/test-uuid-1234", json={"description": "a funny meme"})
+            resp = client.put("/api/memes/test-id-1234", json={"description": "a funny meme"})
         assert resp.status_code == 200
         mock_desc.assert_called_once()
         assert resp.get_json()["description"] == "a funny meme"
@@ -206,7 +206,7 @@ class TestUpdateMeme:
             ),
             patch("memebase.app.MEMES_DIR", tmp_path),
         ):
-            resp = client.put("/api/memes/test-uuid", json={"new_name": "new_name"})
+            resp = client.put("/api/memes/test-id", json={"new_name": "new_name"})
         assert resp.status_code == 409
         assert "already exists" in resp.get_json()["error"]
 
@@ -220,7 +220,7 @@ class TestUpdateMeme:
             patch("memebase.app.rename_meme", return_value="new_name.png") as mock_rename,
             patch("memebase.app.get_meme", return_value={**FAKE_MEME, "filename": "new_name.png"}),
         ):
-            resp = client.put("/api/memes/test-uuid-1234", json={"new_name": "new_name"})
+            resp = client.put("/api/memes/test-id-1234", json={"new_name": "new_name"})
         assert resp.status_code == 200
         mock_rename.assert_called_once()
 
@@ -234,7 +234,7 @@ class TestUpdateMeme:
             patch("memebase.app.set_tags") as mock_tags,
             patch("memebase.app.get_meme", return_value={**FAKE_MEME, "tags": ["funny", "cats"]}),
         ):
-            resp = client.put("/api/memes/test-uuid-1234", json={"tags": ["funny", "cats"]})
+            resp = client.put("/api/memes/test-id-1234", json={"tags": ["funny", "cats"]})
         assert resp.status_code == 200
         mock_tags.assert_called_once()
         assert resp.get_json()["tags"] == ["funny", "cats"]
@@ -246,7 +246,7 @@ class TestDeleteMeme:
             patch("memebase.app.get_db"),
             patch("memebase.app.delete_meme", return_value="test.png"),
         ):
-            resp = client.delete("/api/memes/test-uuid")
+            resp = client.delete("/api/memes/test-id")
         assert resp.status_code == 204
 
     def test_not_found_returns_404(self, client):
@@ -262,7 +262,7 @@ class TestDeleteMeme:
             patch("memebase.app.get_db"),
             patch("memebase.app.delete_meme", return_value="test.png") as mock_del,
         ):
-            client.delete("/api/memes/test-uuid")
+            client.delete("/api/memes/test-id")
         mock_del.assert_called_once()
 
 
@@ -287,7 +287,7 @@ class TestAutoDescribe:
                 return_value=("test.png", None, MemeError.NOT_ON_DISK),
             ),
         ):
-            resp = client.post("/api/memes/some-uuid/auto")
+            resp = client.post("/api/memes/some-id/auto")
         assert resp.status_code == 404
         assert resp.get_json()["error"] == "File not found on disk"
 
@@ -301,7 +301,7 @@ class TestAutoDescribe:
             patch("memebase.app.get_all_tags", return_value=[]),
             patch("memebase.app.analyze_meme", side_effect=RuntimeError("AI broke")),
         ):
-            resp = client.post("/api/memes/some-uuid/auto")
+            resp = client.post("/api/memes/some-id/auto")
         assert resp.status_code == 500
         assert resp.get_json()["error"] == "AI broke"
 
@@ -316,14 +316,14 @@ class TestAutoDescribe:
             patch("memebase.app.get_all_tags", return_value=["existing"]),
             patch("memebase.app.analyze_meme", return_value=suggestion),
         ):
-            resp = client.post("/api/memes/some-uuid/auto")
+            resp = client.post("/api/memes/some-id/auto")
         assert resp.status_code == 200
         assert resp.get_json() == suggestion
 
 
 class TestBulkAuto:
-    def test_empty_uuids_returns_400(self, client):
-        resp = client.post("/api/memes/bulk/auto", json={"uuids": []})
+    def test_empty_ids_returns_400(self, client):
+        resp = client.post("/api/memes/bulk/auto", json={"ids": []})
         assert resp.status_code == 400
 
     def test_success(self, client):
@@ -338,12 +338,12 @@ class TestBulkAuto:
             patch("memebase.app.analyze_meme", return_value=suggestion),
             patch("memebase.app.apply_ai_suggestions") as mock_apply,
         ):
-            resp = client.post("/api/memes/bulk/auto", json={"uuids": ["uuid-1"]})
+            resp = client.post("/api/memes/bulk/auto", json={"ids": ["id-1"]})
         assert resp.status_code == 200
-        assert resp.get_json()["uuid-1"] == {"ok": True}
+        assert resp.get_json()["id-1"] == {"ok": True}
         mock_apply.assert_called_once()
 
-    def test_missing_uuid_skipped(self, client):
+    def test_missing_id_skipped(self, client):
         with (
             patch("memebase.app.get_db"),
             patch("memebase.app.get_all_tags", return_value=[]),
@@ -352,7 +352,7 @@ class TestBulkAuto:
                 return_value=(None, None, MemeError.NOT_IN_DB),
             ),
         ):
-            resp = client.post("/api/memes/bulk/auto", json={"uuids": ["missing"]})
+            resp = client.post("/api/memes/bulk/auto", json={"ids": ["missing"]})
         assert resp.status_code == 200
         assert "missing" not in resp.get_json()
 
@@ -371,15 +371,15 @@ class TestBulkAuto:
             ),
             patch("memebase.app.apply_ai_suggestions"),
         ):
-            resp = client.post("/api/memes/bulk/auto", json={"uuids": ["uuid-1", "uuid-2"]})
+            resp = client.post("/api/memes/bulk/auto", json={"ids": ["id-1", "id-2"]})
         data = resp.get_json()
-        assert "error" in data["uuid-1"]
-        assert data["uuid-2"] == {"ok": True}
+        assert "error" in data["id-1"]
+        assert data["id-2"] == {"ok": True}
 
 
 class TestBulkTags:
-    def test_empty_uuids_returns_400(self, client):
-        resp = client.put("/api/memes/bulk/tags", json={"uuids": []})
+    def test_empty_ids_returns_400(self, client):
+        resp = client.put("/api/memes/bulk/tags", json={"ids": []})
         assert resp.status_code == 400
 
     def test_add_tags(self, client):
@@ -390,7 +390,7 @@ class TestBulkTags:
         ):
             resp = client.put(
                 "/api/memes/bulk/tags",
-                json={"uuids": ["u1", "u2"], "add": ["funny"]},
+                json={"ids": ["u1", "u2"], "add": ["funny"]},
             )
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True}
@@ -405,7 +405,7 @@ class TestBulkTags:
         ):
             resp = client.put(
                 "/api/memes/bulk/tags",
-                json={"uuids": ["u1"], "remove": ["old-tag"]},
+                json={"ids": ["u1"], "remove": ["old-tag"]},
             )
         assert resp.status_code == 200
         assert mock_remove.call_count == 1

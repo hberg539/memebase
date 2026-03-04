@@ -110,10 +110,10 @@ def create_app(config=None):
             thumbnails_format=config["thumbnails"]["format"],
         )
 
-    @app.route("/memes/<uuid>/<path:filename>")
-    def serve_meme(uuid, filename):
+    @app.route("/memes/<meme_id>/<path:filename>")
+    def serve_meme(meme_id, filename):
         with get_db() as conn:
-            result = get_meme_for_serving(conn, uuid)
+            result = get_meme_for_serving(conn, meme_id)
         if not result:
             return _not_found_image()
         real_filename, sha256 = result
@@ -128,16 +128,16 @@ def create_app(config=None):
         resp.headers["Cache-Control"] = f"max-age={CACHE_MAX_AGE}"
         return resp
 
-    @app.route("/thumbnails/<uuid>.<ext>")
-    def serve_thumbnail(uuid, ext):
+    @app.route("/thumbnails/<meme_id>.<ext>")
+    def serve_thumbnail(meme_id, ext):
         with get_db() as conn:
-            result = get_meme_for_serving(conn, uuid)
+            result = get_meme_for_serving(conn, meme_id)
         if not result:
             return _not_found_image()
         real_filename, sha256 = result
 
         source_path = MEMES_DIR / real_filename
-        thumb_path = get_or_create_thumbnail(uuid, source_path, config["thumbnails"])
+        thumb_path = get_or_create_thumbnail(meme_id, source_path, config["thumbnails"])
 
         if thumb_path and thumb_path.exists():
             etag = f'"{sha256}-thumb"'
@@ -235,12 +235,10 @@ def create_app(config=None):
                 meme, is_dup = register_meme(conn, dest)
                 if is_dup:
                     meme["duplicate"] = True
-                    log.info(
-                        "upload skipped (duplicate): filename=%s uuid=%s", basename, meme["uuid"]
-                    )
+                    log.info("upload skipped (duplicate): filename=%s id=%s", basename, meme["id"])
                 else:
                     log.info(
-                        "upload: filename=%s uuid=%s size=%d", basename, meme["uuid"], meme["size"]
+                        "upload: filename=%s id=%s size=%d", basename, meme["id"], meme["size"]
                     )
                 results.append(meme)
 
@@ -269,24 +267,24 @@ def create_app(config=None):
                 meme, is_dup = register_meme(conn, dest)
                 if is_dup:
                     meme["duplicate"] = True
-                    log.info("url upload skipped (duplicate): url=%s uuid=%s", url, meme["uuid"])
+                    log.info("url upload skipped (duplicate): url=%s id=%s", url, meme["id"])
                 else:
                     has_new = True
                     log.info(
-                        "url upload: url=%s filename=%s uuid=%s size=%d",
+                        "url upload: url=%s filename=%s id=%s size=%d",
                         url,
                         basename,
-                        meme["uuid"],
+                        meme["id"],
                         meme["size"],
                     )
                 results.append(meme)
 
         return jsonify(results), 201 if has_new else 200
 
-    @app.route("/api/memes/<uuid>", methods=["PUT"])
-    def update_meme_route(uuid):
+    @app.route("/api/memes/<meme_id>", methods=["PUT"])
+    def update_meme_route(meme_id):
         with get_db() as conn:
-            filename, _, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
+            filename, _, reason = get_meme_file_path(conn, meme_id, MEMES_DIR)
             if reason == MemeError.NOT_IN_DB:
                 return jsonify({"error": "Not found"}), 404
 
@@ -295,18 +293,18 @@ def create_app(config=None):
             # Update favorite
             favorite = data.get("favorite")
             if favorite is not None:
-                update_favorite(conn, uuid, favorite)
+                update_favorite(conn, meme_id, favorite)
                 log.info(
-                    "favorite updated: uuid=%s filename=%s favorite=%s", uuid, filename, favorite
+                    "favorite updated: id=%s filename=%s favorite=%s", meme_id, filename, favorite
                 )
 
             # Update description
             description = data.get("description")
             if description is not None:
-                update_description(conn, uuid, description)
+                update_description(conn, meme_id, description)
                 log.info(
-                    "description updated: uuid=%s filename=%s length=%d",
-                    uuid,
+                    "description updated: id=%s filename=%s length=%d",
+                    meme_id,
                     filename,
                     len(description),
                 )
@@ -315,8 +313,8 @@ def create_app(config=None):
             new_name_stem = data.get("new_name")
             if new_name_stem is not None:
                 try:
-                    new_filename = rename_meme(conn, uuid, filename, new_name_stem, MEMES_DIR)
-                    log.info("rename: uuid=%s old=%s new=%s", uuid, filename, new_filename)
+                    new_filename = rename_meme(conn, meme_id, filename, new_name_stem, MEMES_DIR)
+                    log.info("rename: id=%s old=%s new=%s", meme_id, filename, new_filename)
                 except FileExistsError:
                     return jsonify({"error": "A file with that name already exists"}), 409
                 except ValueError:
@@ -325,10 +323,10 @@ def create_app(config=None):
             # Update tags
             tags = data.get("tags")
             if tags is not None:
-                set_tags(conn, uuid, tags)
-                log.info("tags updated: uuid=%s filename=%s tags=%s", uuid, filename, tags)
+                set_tags(conn, meme_id, tags)
+                log.info("tags updated: id=%s filename=%s tags=%s", meme_id, filename, tags)
 
-            result = get_meme(conn, uuid)
+            result = get_meme(conn, meme_id)
         return jsonify(result)
 
     @app.route("/api/tags")
@@ -337,10 +335,10 @@ def create_app(config=None):
             tags = get_all_tags(conn)
         return jsonify(tags)
 
-    @app.route("/api/memes/<uuid>/auto", methods=["POST"])
-    def auto_describe(uuid):
+    @app.route("/api/memes/<meme_id>/auto", methods=["POST"])
+    def auto_describe(meme_id):
         with get_db() as conn:
-            filename, path, reason = get_meme_file_path(conn, uuid, MEMES_DIR)
+            filename, path, reason = get_meme_file_path(conn, meme_id, MEMES_DIR)
             if reason == MemeError.NOT_IN_DB:
                 return jsonify({"error": "Not found"}), 404
             if reason == MemeError.NOT_ON_DISK:
@@ -349,18 +347,18 @@ def create_app(config=None):
             tags = get_all_tags(conn)
 
         ai_cfg = config["ai"]
-        log.info("auto-detect started: uuid=%s filename=%s", uuid, filename)
+        log.info("auto-detect started: id=%s filename=%s", meme_id, filename)
         try:
             result = analyze_meme(
                 path, tags, model=ai_cfg["model"], prompt_template=ai_cfg["prompt"]
             )
         except Exception as e:
-            log.exception("auto-detect failed: uuid=%s filename=%s", uuid, filename)
+            log.exception("auto-detect failed: id=%s filename=%s", meme_id, filename)
             return jsonify({"error": str(e)}), 500
 
         log.info(
-            "auto-detect completed: uuid=%s filename=%s suggested_name=%s",
-            uuid,
+            "auto-detect completed: id=%s filename=%s suggested_name=%s",
+            meme_id,
             filename,
             result.get("name", "?"),
         )
@@ -369,18 +367,18 @@ def create_app(config=None):
     @app.route("/api/memes/bulk/auto", methods=["POST"])
     def bulk_auto():
         data = request.get_json()
-        uuids = data.get("uuids", [])
+        ids = data.get("ids", [])
         fields = data.get("fields", ["name", "description", "tags"])
-        if not uuids:
-            return jsonify({"error": "No uuids provided"}), 400
+        if not ids:
+            return jsonify({"error": "No ids provided"}), 400
 
         ai_cfg = config["ai"]
-        log.info("bulk auto-detect started: count=%d fields=%s", len(uuids), fields)
+        log.info("bulk auto-detect started: count=%d fields=%s", len(ids), fields)
         with get_db() as conn:
             all_tags = get_all_tags(conn)
             results = {}
-            for u in uuids:
-                filename, path, reason = get_meme_file_path(conn, u, MEMES_DIR)
+            for meme_id in ids:
+                filename, path, reason = get_meme_file_path(conn, meme_id, MEMES_DIR)
                 if reason:
                     continue
 
@@ -390,54 +388,57 @@ def create_app(config=None):
                     )
                 except Exception as e:
                     log.error(
-                        "bulk auto-detect failed: uuid=%s filename=%s error=%s", u, filename, e
+                        "bulk auto-detect failed: id=%s filename=%s error=%s",
+                        meme_id,
+                        filename,
+                        e,
                     )
-                    results[u] = {"error": str(e)}
+                    results[meme_id] = {"error": str(e)}
                     continue
 
-                apply_ai_suggestions(conn, u, filename, suggestion, fields, MEMES_DIR)
+                apply_ai_suggestions(conn, meme_id, filename, suggestion, fields, MEMES_DIR)
 
-                results[u] = {"ok": True}
-                log.debug("bulk auto-detect completed: uuid=%s filename=%s", u, filename)
+                results[meme_id] = {"ok": True}
+                log.debug("bulk auto-detect completed: id=%s filename=%s", meme_id, filename)
 
         log.info(
             "bulk auto-detect finished: succeeded=%d total=%d",
             sum(1 for r in results.values() if r.get("ok")),
-            len(uuids),
+            len(ids),
         )
         return jsonify(results)
 
     @app.route("/api/memes/bulk/tags", methods=["PUT"])
     def bulk_update_tags():
         data = request.get_json()
-        uuids = data.get("uuids", [])
+        ids = data.get("ids", [])
         tags_to_add = data.get("add", [])
         tags_to_remove = data.get("remove", [])
-        if not uuids:
-            return jsonify({"error": "No uuids provided"}), 400
+        if not ids:
+            return jsonify({"error": "No ids provided"}), 400
 
         log.info(
             "bulk tags updated: count=%d add=%s remove=%s",
-            len(uuids),
+            len(ids),
             tags_to_add,
             tags_to_remove,
         )
         with get_db() as conn:
-            for u in uuids:
+            for meme_id in ids:
                 if tags_to_add:
-                    add_tags(conn, u, tags_to_add)
+                    add_tags(conn, meme_id, tags_to_add)
                 if tags_to_remove:
-                    remove_tags(conn, u, tags_to_remove)
+                    remove_tags(conn, meme_id, tags_to_remove)
         return jsonify({"ok": True})
 
-    @app.route("/api/memes/<uuid>", methods=["DELETE"])
-    def delete_meme_route(uuid):
+    @app.route("/api/memes/<meme_id>", methods=["DELETE"])
+    def delete_meme_route(meme_id):
         try:
             with get_db() as conn:
-                filename = delete_meme(conn, uuid, MEMES_DIR)
+                filename = delete_meme(conn, meme_id, MEMES_DIR)
         except LookupError:
             return jsonify({"error": "Not found"}), 404
-        log.info("delete: uuid=%s filename=%s", uuid, filename)
+        log.info("delete: id=%s filename=%s", meme_id, filename)
         return "", 204
 
     return app

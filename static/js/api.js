@@ -34,8 +34,8 @@ const Api = (() => {
 			return res.json();
 		},
 
-		async updateMeme(uuid, body) {
-			const res = await _json(`/api/memes/${encodeURIComponent(uuid)}`, "PUT", body);
+		async updateMeme(id, body) {
+			const res = await _json(`/api/memes/${encodeURIComponent(id)}`, "PUT", body);
 			if (!res.ok) {
 				const e = await res.json();
 				throw new Error(e.error || "Error");
@@ -43,14 +43,14 @@ const Api = (() => {
 			return res.json();
 		},
 
-		async deleteMeme(uuid) {
-			return fetch(`/api/memes/${encodeURIComponent(uuid)}`, {
+		async deleteMeme(id) {
+			return fetch(`/api/memes/${encodeURIComponent(id)}`, {
 				method: "DELETE",
 			});
 		},
 
-		async autoDetect(uuid) {
-			const res = await fetch(`/api/memes/${encodeURIComponent(uuid)}/auto`, {
+		async autoDetect(id) {
+			const res = await fetch(`/api/memes/${encodeURIComponent(id)}/auto`, {
 				method: "POST",
 			});
 			if (!res.ok) {
@@ -60,9 +60,9 @@ const Api = (() => {
 			return res.json();
 		},
 
-		async bulkTags(uuids, add, remove) {
+		async bulkTags(ids, add, remove) {
 			const res = await _json("/api/memes/bulk/tags", "PUT", {
-				uuids,
+				ids,
 				add,
 				remove,
 			});

@@ -57,7 +57,7 @@ class TestRegisterMeme:
         f2.write_bytes(b"same content")
         meme2, is_dup2 = register_meme(conn, f2)
         assert is_dup2
-        assert meme2["uuid"] == meme1["uuid"]
+        assert meme2["id"] == meme1["id"]
         assert f2.exists()
 
 
@@ -70,30 +70,30 @@ class TestRenameMeme:
         f = tmp_path / "old_name.png"
         f.write_bytes(b"data")
         meme, _ = register_meme(conn, f)
-        return conn, meme["uuid"], meme["filename"]
+        return conn, meme["id"], meme["filename"]
 
     def test_success(self, tmp_path):
-        conn, uuid, filename = self._setup(tmp_path)
-        new = rename_meme(conn, uuid, filename, "new_name", tmp_path)
+        conn, meme_id, filename = self._setup(tmp_path)
+        new = rename_meme(conn, meme_id, filename, "new_name", tmp_path)
         assert new == "new_name.png"
         assert (tmp_path / "new_name.png").exists()
         assert not (tmp_path / "old_name.png").exists()
 
     def test_collision_raises(self, tmp_path):
-        conn, uuid, filename = self._setup(tmp_path)
+        conn, meme_id, filename = self._setup(tmp_path)
         (tmp_path / "taken.png").write_bytes(b"x")
         with pytest.raises(FileExistsError):
-            rename_meme(conn, uuid, filename, "taken", tmp_path)
+            rename_meme(conn, meme_id, filename, "taken", tmp_path)
 
     def test_unchanged_stem_raises(self, tmp_path):
-        conn, uuid, filename = self._setup(tmp_path)
+        conn, meme_id, filename = self._setup(tmp_path)
         with pytest.raises(ValueError, match="unchanged"):
-            rename_meme(conn, uuid, filename, "old_name", tmp_path)
+            rename_meme(conn, meme_id, filename, "old_name", tmp_path)
 
     def test_empty_stem_raises(self, tmp_path):
-        conn, uuid, filename = self._setup(tmp_path)
+        conn, meme_id, filename = self._setup(tmp_path)
         with pytest.raises(ValueError, match="empty"):
-            rename_meme(conn, uuid, filename, "   ", tmp_path)
+            rename_meme(conn, meme_id, filename, "   ", tmp_path)
 
 
 class TestDeleteMeme:
@@ -105,27 +105,27 @@ class TestDeleteMeme:
         f = tmp_path / "doomed.png"
         f.write_bytes(b"data")
         meme, _ = register_meme(conn, f)
-        return conn, meme["uuid"]
+        return conn, meme["id"]
 
     @patch("memebase.service.delete_thumbnails")
     def test_removes_row_and_file(self, mock_thumbs, tmp_path):
-        conn, uuid = self._setup(tmp_path)
+        conn, meme_id = self._setup(tmp_path)
         assert (tmp_path / "doomed.png").exists()
-        filename = delete_meme(conn, uuid, tmp_path)
+        filename = delete_meme(conn, meme_id, tmp_path)
         assert filename == "doomed.png"
         assert not (tmp_path / "doomed.png").exists()
-        mock_thumbs.assert_called_once_with(uuid)
+        mock_thumbs.assert_called_once_with(meme_id)
 
     @patch("memebase.service.delete_thumbnails")
     def test_handles_missing_file(self, mock_thumbs, tmp_path):
-        conn, uuid = self._setup(tmp_path)
+        conn, meme_id = self._setup(tmp_path)
         (tmp_path / "doomed.png").unlink()
-        filename = delete_meme(conn, uuid, tmp_path)
+        filename = delete_meme(conn, meme_id, tmp_path)
         assert filename == "doomed.png"
-        mock_thumbs.assert_called_once_with(uuid)
+        mock_thumbs.assert_called_once_with(meme_id)
 
     @patch("memebase.service.delete_thumbnails")
-    def test_unknown_uuid_raises(self, mock_thumbs, tmp_path):
+    def test_unknown_id_raises(self, mock_thumbs, tmp_path):
         conn, _ = self._setup(tmp_path)
         with pytest.raises(LookupError):
-            delete_meme(conn, "nonexistent-uuid", tmp_path)
+            delete_meme(conn, "nonexistent-id", tmp_path)
