@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/hberg539/memebase/compare/v0.8.0...v0.8.1) (2026-03-04)
+
+
+### Refactoring
+
+* centralize rename and delete operations into service.py ([0183776](https://github.com/hberg539/memebase/commit/0183776973078127222ea325e9b66a73172203aa))
+* **db:** rename uuid to id/meme_id across codebase ([9e9a550](https://github.com/hberg539/memebase/commit/9e9a5503f2a30401414595594f6b3a66d31f1edb))
+
 ## [0.8.0](https://github.com/hberg539/memebase/compare/v0.7.0...v0.8.0) (2026-02-26)
 
 
