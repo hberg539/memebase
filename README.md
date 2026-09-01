@@ -33,7 +33,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
-- **Copy & download** - One click to copy a meme to your clipboard or download it
+- **Copy & download** - One click to copy a meme image or its share URL link to your clipboard, or download it
 - **Metadata** - Every upload gets its dimensions and duration recorded. Memes grabbed from a URL also remember where they came from: the site, who posted it, when, what the post said, and a link back
 - **Themes** - Ships with built-in themes and supports custom CSS themes
 - **Self-contained** - Everything lives in a single `./data` folder. Easy to back up, easy to move
@@ -88,6 +88,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `server.host` | `"0.0.0.0"` | Address the server listens on |
 | `server.port` | `5000` | Port the server listens on |
 | `server.max_upload_size` | `100` | Max upload size in MB (0 = unlimited) |
+| `server.public_url` | `""` | Optional public share URL (can also be set via `MEMEBASE_PUBLIC_URL` or `PUBLIC_URL` environment variable) |
 | `grid.layout` | `"grid"` | Layout mode: `"grid"` (uniform squares) or `"masonry"` (natural aspect ratios) |
 | `grid.thumbnail_size` | `220` | Card width in pixels |
 | `grid.per_page` | `"auto"` | Memes per page: `"auto"` (fill viewport) or a number |
