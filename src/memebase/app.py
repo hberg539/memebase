@@ -162,6 +162,7 @@ def create_app(config=None):
             if meme:
                 ext = Path(real_filename).suffix.lower()
                 is_vid = ext in {".mp4", ".webm"}
+                is_gif = ext == ".gif"
                 mime_type = mimetypes.guess_type(real_filename)[0] or (
                     "video/mp4" if is_vid else "image/png"
                 )
@@ -178,6 +179,7 @@ def create_app(config=None):
                     title=config["ui"]["title"],
                     theme=theme,
                     is_video=is_vid,
+                    is_gif=is_gif,
                     mime_type=mime_type,
                     share_url=share_url,
                     raw_url=raw_url,

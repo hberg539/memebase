@@ -4,16 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ meme.filename }} - {{ title }}</title>
+{% if share_url %}
+<link rel="canonical" href="{{ share_url }}">
+<meta property="og:url" content="{{ share_url }}">
+{% endif %}
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 <link rel="stylesheet" href="/themes/{{ theme }}.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <meta property="og:site_name" content="{{ title }}">
-<meta property="og:type" content="{{ 'video.other' if is_video else 'website' }}">
+<meta property="og:type" content="{{ 'video.other' if (is_video or is_gif) else 'website' }}">
 <meta property="og:title" content="{{ meme.filename }}">
 <meta property="og:description" content="{{ meme.description or title }}">
-{% if share_url %}
-<meta property="og:url" content="{{ share_url }}">
-{% endif %}
 {% if is_video %}
 <meta property="og:video" content="{{ raw_url }}">
 <meta property="og:video:type" content="{{ mime_type }}">
@@ -26,6 +27,11 @@
 <meta property="og:image:secure_url" content="{{ raw_url }}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+{% if is_gif %}
+<meta property="og:video" content="{{ raw_url }}">
+<meta property="og:video:type" content="image/gif">
+<meta property="og:video:secure_url" content="{{ raw_url }}">
+{% endif %}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="{{ raw_url }}">
 {% endif %}
