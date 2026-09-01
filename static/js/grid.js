@@ -66,7 +66,10 @@ function buildCardHtml(m, isNew) {
 	return `
     <div class="card${isNew ? " card-new" : ""}" data-id="${esc(m.id)}" data-filename="${esc(m.filename)}" data-desc="${esc(m.description)}" data-tags="${esc(m.tags.join(","))}" data-created="${esc(m.created_at || "")}" data-fav="${m.favorite || 0}" data-size="${m.size || 0}">
       <button class="btn-fav${m.favorite ? " active" : ""}" title="Favorite">${icon(m.favorite ? "heart" : "heart", 18)}</button>
-      <button class="btn-copy" data-src="${src}" data-filename="${esc(m.filename)}">${icon(canCopy(m.filename) ? "clipboard" : "download", 18)}</button>
+      <div class="card-actions-right">
+        <button class="btn-copy-url" data-id="${esc(m.id)}" data-filename="${esc(m.filename)}" title="Copy URL">${icon("link", 18)}</button>
+        <button class="btn-copy" data-src="${src}" data-filename="${esc(m.filename)}" title="${canCopy(m.filename) ? "Copy image" : "Download file"}">${icon(canCopy(m.filename) ? "clipboard" : "download", 18)}</button>
+      </div>
       ${media}
       <div class="card-overlay">
         ${tags}

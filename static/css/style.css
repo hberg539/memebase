@@ -159,30 +159,43 @@ header select {
 .btn-fav.active svg {
 	fill: var(--color-accent-red);
 }
-.btn-copy {
+.card-actions-right {
 	position: absolute;
 	top: 0.4rem;
 	right: 0.4rem;
 	z-index: 2;
+	display: flex;
+	gap: 0.3rem;
+}
+.btn-copy,
+.btn-copy-url {
 	background: var(--color-card-btn-bg, rgba(0, 0, 0, 0.6));
 	border: none;
 	border-radius: 6px;
 	color: var(--color-card-btn-text, var(--color-text-primary));
-	padding: 0.3rem 0.5rem;
+	padding: 0.3rem 0.45rem;
 	cursor: pointer;
 	font-size: 0.8rem;
 	opacity: 0;
 	transition: opacity 0.15s;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
 }
-.card:hover .btn-copy {
+.card:hover .btn-copy,
+.card:hover .btn-copy-url {
 	opacity: 1;
 }
-.btn-copy:hover {
+.btn-copy:hover,
+.btn-copy-url:hover {
 	background: var(--color-card-btn-hover, rgba(0, 0, 0, 0.85));
 }
-.btn-copy.copied {
+.btn-copy.copied,
+.btn-copy-url.copied {
 	background: var(--color-copy-confirmed-bg);
 }
+
 .card-overlay {
 	position: absolute;
 	bottom: 0;
@@ -349,6 +362,29 @@ dialog.closing::backdrop {
 	color: var(--color-text-placeholder);
 	white-space: nowrap;
 }
+.btn-share-copy {
+	padding: 0.5rem 0.8rem;
+	background: var(--color-border-subtle);
+	border: 1px solid var(--color-border-primary);
+	border-top-right-radius: 6px;
+	border-bottom-right-radius: 6px;
+	font-size: 0.85rem;
+	color: var(--color-text-primary);
+	white-space: nowrap;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	transition: background 0.15s;
+}
+.btn-share-copy:hover {
+	background: var(--color-border-primary);
+}
+.btn-share-copy.copied {
+	background: var(--color-copy-confirmed-bg);
+	color: #fff;
+	border-color: transparent;
+}
 .modal-actions {
 	display: flex;
 	gap: 0.5rem;
@@ -450,6 +486,12 @@ dialog.closing::backdrop {
 }
 .info-list a:hover {
 	text-decoration: underline;
+}
+.btn-meta.copied {
+	background: var(--color-copy-confirmed-bg);
+	border-color: transparent;
+	color: #fff;
+}
 }
 .modal-fav {
 	cursor: pointer !important;
