@@ -138,6 +138,7 @@ def create_app(config=None):
             public_url=public_url,
         )
 
+    @app.route("/memes/<meme_id>/raw/<path:filename>")
     @app.route("/memes/<meme_id>/<path:filename>")
     def serve_meme(meme_id, filename):
         with get_db() as conn:
@@ -146,7 +147,9 @@ def create_app(config=None):
             return _not_found_image()
         real_filename, sha256 = result
 
-        raw_requested = request.args.get("raw") == "1"
+        is_raw_route = (
+            request.path.startswith(f"/memes/{meme_id}/raw/") or request.args.get("raw") == "1"
+        )
         user_agent = request.headers.get("User-Agent", "").lower()
         is_bot = any(bot in user_agent for bot in BOT_USER_AGENTS)
         accept = request.headers.get("Accept", "").lower()
@@ -156,7 +159,7 @@ def create_app(config=None):
             and not accept.startswith("video/")
         )
 
-        if not raw_requested and (is_bot or wants_html):
+        if not is_raw_route and (is_bot or wants_html):
             with get_db() as conn:
                 meme = get_meme(conn, meme_id)
             if meme:
@@ -169,9 +172,10 @@ def create_app(config=None):
                 share_base = public_url.rstrip("/") if public_url else request.host_url.rstrip("/")
                 if public_url and share_base.endswith("/memes"):
                     share_url = f"{share_base}/{meme_id}/{quote(filename)}"
+                    raw_url = f"{share_base}/{meme_id}/raw/{quote(filename)}"
                 else:
                     share_url = f"{share_base}/memes/{meme_id}/{quote(filename)}"
-                raw_url = f"{share_url}?raw=1"
+                    raw_url = f"{share_base}/memes/{meme_id}/raw/{quote(filename)}"
                 theme = _safe_theme_name(config["ui"]["theme"])
                 return render_template(
                     "meme.html",
