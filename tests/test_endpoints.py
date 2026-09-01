@@ -445,3 +445,34 @@ class TestBulkTags:
         assert resp.status_code == 200
         assert mock_remove.call_count == 1
         mock_add.assert_not_called()
+
+
+class TestPublicUrl:
+    def test_default_public_url_in_index(self, monkeypatch):
+        monkeypatch.delenv("MEMEBASE_PUBLIC_URL", raising=False)
+        monkeypatch.delenv("PUBLIC_URL", raising=False)
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "";' in resp.data
+
+    def test_env_memebase_public_url_in_index(self, monkeypatch):
+        monkeypatch.setenv("MEMEBASE_PUBLIC_URL", "memes.example.com/memes")
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "https://memes.example.com/memes";' in resp.data
+
+    def test_env_public_url_fallback_in_index(self, monkeypatch):
+        monkeypatch.delenv("MEMEBASE_PUBLIC_URL", raising=False)
+        monkeypatch.setenv("PUBLIC_URL", "https://share.memes.com")
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "https://share.memes.com";' in resp.data

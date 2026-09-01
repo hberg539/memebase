@@ -2,6 +2,7 @@
 host = "0.0.0.0"       # listen address
 port = 5000            # listen port
 max_upload_size = 100  # max upload size in MB (0 = unlimited)
+public_url = ""        # optional public share URL (e.g. "https://memes.example.com/memes")
 
 [grid]
 layout = "grid"       # "grid" or "masonry"

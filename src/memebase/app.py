@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from memebase.common import (
     ROOT_DIR,
     THEMES_DIR,
 )
-from memebase.config import load_version
+from memebase.config import get_config, load_version
 from memebase.db import (
     add_tags,
     get_all_tags,
@@ -66,6 +67,18 @@ def _not_found_image():
 
 def create_app(config=None):
     VERSION = load_version()
+    if config is None:
+        config = get_config()
+
+    env_public_url = os.getenv("MEMEBASE_PUBLIC_URL") or os.getenv("PUBLIC_URL")
+    if env_public_url is not None and env_public_url.strip() != "":
+        public_url = env_public_url.strip()
+    else:
+        server_cfg = config.get("server", {})
+        public_url = (server_cfg.get("public_url") or "").strip()
+
+    if public_url and not public_url.startswith(("http://", "https://")):
+        public_url = f"https://{public_url}"
 
     app = Flask(
         __name__,
@@ -108,6 +121,7 @@ def create_app(config=None):
             thumbnails_enabled=config["thumbnails"]["enabled"],
             thumbnails_skip_types=config["thumbnails"]["skip_types"],
             thumbnails_format=config["thumbnails"]["format"],
+            public_url=public_url,
         )
 
     @app.route("/memes/<meme_id>/<path:filename>")

@@ -32,6 +32,7 @@ class ServerConfig(TypedDict):
     host: str
     port: int
     max_upload_size: int
+    public_url: NotRequired[str]
 
 
 class UiConfig(TypedDict):

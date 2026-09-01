@@ -9,6 +9,19 @@ def test_empty_user_config():
     assert result == _DEFAULTS
 
 
+def test_public_url_default():
+    """Default server config has empty public_url."""
+    result = _deep_merge(_DEFAULTS, {})
+    assert result["server"]["public_url"] == ""
+
+
+def test_public_url_override():
+    """User can specify public_url in config."""
+    user = {"server": {"public_url": "https://memes.example.com"}}
+    result = _deep_merge(_DEFAULTS, user)
+    assert result["server"]["public_url"] == "https://memes.example.com"
+
+
 def test_full_user_config_overrides():
     """User supplies every key -- all defaults replaced."""
     user = {
@@ -16,6 +29,7 @@ def test_full_user_config_overrides():
             "host": "127.0.0.1",
             "port": 8080,
             "max_upload_size": 50,
+            "public_url": "https://memes.example.com",
         },
         "grid": {"layout": "masonry", "thumbnail_size": 300, "per_page": 80},
         "ui": {"title": "Dank Memes", "theme": "dracula"},
