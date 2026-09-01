@@ -1,6 +1,8 @@
+import mimetypes
 import os
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import (
     Flask,
@@ -53,6 +55,18 @@ from memebase.util import generate_placeholder_image, sanitize_filename
 log = get_logger(__name__)
 
 _THEME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+BOT_USER_AGENTS = (
+    "telegrambot",
+    "twitterbot",
+    "facebookexternalhit",
+    "slackbot",
+    "linkedinbot",
+    "whatsapp",
+    "skypeuripreview",
+    "discordbot",
+    "mattermost",
+)
 
 
 def _safe_theme_name(name: str) -> str:
@@ -131,6 +145,44 @@ def create_app(config=None):
         if not result:
             return _not_found_image()
         real_filename, sha256 = result
+
+        raw_requested = request.args.get("raw") == "1"
+        user_agent = request.headers.get("User-Agent", "").lower()
+        is_bot = any(bot in user_agent for bot in BOT_USER_AGENTS)
+        accept = request.headers.get("Accept", "").lower()
+        wants_html = (
+            "text/html" in accept
+            and not accept.startswith("image/")
+            and not accept.startswith("video/")
+        )
+
+        if not raw_requested and (is_bot or wants_html):
+            with get_db() as conn:
+                meme = get_meme(conn, meme_id)
+            if meme:
+                ext = Path(real_filename).suffix.lower()
+                is_vid = ext in {".mp4", ".webm"}
+                mime_type = mimetypes.guess_type(real_filename)[0] or (
+                    "video/mp4" if is_vid else "image/png"
+                )
+                share_base = public_url.rstrip("/") if public_url else request.host_url.rstrip("/")
+                if public_url and share_base.endswith("/memes"):
+                    share_url = f"{share_base}/{meme_id}/{quote(filename)}"
+                else:
+                    share_url = f"{share_base}/memes/{meme_id}/{quote(filename)}"
+                raw_url = f"{share_url}?raw=1"
+                theme = _safe_theme_name(config["ui"]["theme"])
+                return render_template(
+                    "meme.html",
+                    meme=meme,
+                    title=config["ui"]["title"],
+                    theme=theme,
+                    is_video=is_vid,
+                    mime_type=mime_type,
+                    share_url=share_url,
+                    raw_url=raw_url,
+                )
+
         etag = f'"{sha256}"'
         if request.headers.get("If-None-Match") == etag:
             return "", 304

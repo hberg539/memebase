@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ meme.filename }} - {{ title }}</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+<link rel="stylesheet" href="/themes/{{ theme }}.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<meta property="og:site_name" content="{{ title }}">
+<meta property="og:type" content="{{ 'video.other' if is_video else 'website' }}">
+<meta property="og:title" content="{{ meme.filename }}">
+<meta property="og:description" content="{{ meme.description or title }}">
+{% if share_url %}
+<meta property="og:url" content="{{ share_url }}">
+{% endif %}
+{% if is_video %}
+<meta property="og:video" content="{{ raw_url }}">
+<meta property="og:video:type" content="{{ mime_type }}">
+<meta property="og:video:secure_url" content="{{ raw_url }}">
+<meta name="twitter:card" content="player">
+<meta name="twitter:player" content="{{ raw_url }}">
+{% else %}
+<meta property="og:image" content="{{ raw_url }}">
+<meta property="og:image:type" content="{{ mime_type }}">
+<meta property="og:image:secure_url" content="{{ raw_url }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ raw_url }}">
+{% endif %}
+<meta name="twitter:title" content="{{ meme.filename }}">
+<meta name="twitter:description" content="{{ meme.description or title }}">
+<style>
+body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	margin: 0;
+	padding: 1.5rem;
+	background: var(--color-bg-body, #0f172a);
+	color: var(--color-text-primary, #f8fafc);
+	font-family: system-ui, -apple-system, sans-serif;
+	box-sizing: border-box;
+}
+.meme-container {
+	max-width: 800px;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1rem;
+	text-align: center;
+}
+.meme-media {
+	max-width: 100%;
+	max-height: 70vh;
+	border-radius: 8px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+	object-fit: contain;
+}
+.meme-title {
+	font-size: 1.5rem;
+	margin: 0;
+}
+.meme-desc {
+	color: var(--color-text-muted, #94a3b8);
+	font-size: 1rem;
+	margin: 0;
+}
+.btn-back {
+	display: inline-block;
+	margin-top: 1rem;
+	padding: 0.5rem 1.25rem;
+	background: var(--color-accent-blue, #3b82f6);
+	color: #fff;
+	text-decoration: none;
+	border-radius: 6px;
+	font-weight: 500;
+}
+</style>
+</head>
+<body>
+  <div class="meme-container">
+    {% if is_video %}
+    <video class="meme-media" src="{{ raw_url }}" controls loop autoplay></video>
+    {% else %}
+    <img class="meme-media" src="{{ raw_url }}" alt="{{ meme.filename }}">
+    {% endif %}
+    <h1 class="meme-title">{{ meme.filename }}</h1>
+    {% if meme.description %}
+    <p class="meme-desc">{{ meme.description }}</p>
+    {% endif %}
+    <a href="/" class="btn-back">Open in Memebase</a>
+  </div>
+</body>
+</html>

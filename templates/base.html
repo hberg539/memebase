@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ title }}</title>
+<meta property="og:site_name" content="{{ title }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="A self-hosted home for your memes.">
+<meta name="twitter:card" content="summary">
+{% if public_url %}
+<meta property="og:url" content="{{ public_url }}">
+<meta property="og:image" content="{{ public_url }}/static/favicon.png">
+{% endif %}
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 <link rel="stylesheet" href="/themes/{{ theme }}.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">

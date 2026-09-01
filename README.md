@@ -35,6 +35,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
 - **Copy & download** - One click to copy a meme image or its share URL link to your clipboard, or download it
 - **Metadata** - Every upload gets its dimensions and duration recorded. Memes grabbed from a URL also remember where they came from: the site, who posted it, when, what the post said, and a link back
+- **Rich previews** - Open Graph and Twitter Card support for Telegram, Discord, Twitter, and Slack link embeds
 - **Themes** - Ships with built-in themes and supports custom CSS themes
 - **Self-contained** - Everything lives in a single `./data` folder. Easy to back up, easy to move
 
