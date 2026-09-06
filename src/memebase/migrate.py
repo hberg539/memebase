@@ -1,4 +1,8 @@
-"""Lightweight SQLite migration runner using PRAGMA user_version."""
+"""Lightweight SQLite migration runner using PRAGMA user_version.
+
+Each migration module provides ``migrate(conn)`` for schema changes and may
+also provide ``post_migrate(conn)`` for one-time data work such as backfills.
+"""
 
 import importlib
 import logging
@@ -34,7 +38,28 @@ def apply_migrations(conn: sqlite3.Connection) -> None:
         module.migrate(conn)
         conn.commit()
         set_version(conn, version)
+        _run_post_migrate(conn, version, module)
     log.info("schema now at version %d", get_version(conn))
+
+
+def _run_post_migrate(conn: sqlite3.Connection, version: int, module: ModuleType) -> None:
+    """Run a migration's optional post_migrate(conn) data hook.
+
+    Hooks run once, right after their schema migration is applied and the
+    version is bumped. They are for data work (backfills, cleanups) that
+    must not block startup: failures are logged, not raised, so hooks
+    should be idempotent and skip rows they already handled.
+    """
+    hook = getattr(module, "post_migrate", None)
+    if hook is None:
+        return
+    log.info("running post-migrate hook for %04d", version)
+    try:
+        hook(conn)
+        conn.commit()
+    except Exception:
+        log.exception("post-migrate hook for %04d failed", version)
+        conn.rollback()
 
 
 def _discover_migrations(after: int) -> list[tuple[int, ModuleType]]:

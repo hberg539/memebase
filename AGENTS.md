@@ -65,6 +65,8 @@ Schema is managed by a lightweight migration system in `src/memebase/migrate.py`
 
 To add a new migration, create `src/memebase/migrations/NNNN_description.py` (where NNNN is the next version number) with a `migrate(conn: sqlite3.Connection) -> None` function. Use `IF NOT EXISTS` / `IF EXISTS` guards and additive changes only (new columns with defaults, new tables, new indexes).
 
+A migration module may also define `post_migrate(conn: sqlite3.Connection) -> None`. The runner calls it once, right after that migration's schema change is committed and the version is bumped. Use it for one-time data work such as backfills (see `0002_metadata.py`, which probes files on disk to fill width/height/duration). Hooks must be idempotent and skip rows already handled; a hook that raises is logged and rolled back but never blocks startup, and it is not retried.
+
 ## CI
 
 GitHub Actions runs `uv run pytest` on every push and PR (`.github/workflows/test.yml`).
