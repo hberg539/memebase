@@ -79,6 +79,7 @@ const Api = (() => {
 
 		async listCollections() {
 			const res = await fetch("/api/collections");
+			if (!res.ok) throw new Error("Failed to load collections");
 			return res.json();
 		},
 

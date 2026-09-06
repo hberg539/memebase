@@ -13,6 +13,7 @@ from memebase.service import (
     register_meme,
     rename_collection,
     rename_meme,
+    resolve_collection,
     resolve_unique_path,
 )
 
@@ -63,7 +64,7 @@ class TestRegisterMeme:
         )
         f = tmp_path / "test.png"
         f.write_bytes(b"unique content")
-        meme, is_dup = register_meme(conn, f, collection="cats")
+        meme, is_dup = register_meme(conn, f, collection_id="coll-cats")
         assert not is_dup
         assert meme["collection"] == "cats"
 
@@ -196,6 +197,16 @@ class TestDeleteMeme:
             delete_meme(conn, "nonexistent-id", tmp_path)
 
     @patch("memebase.service.delete_thumbnails")
+    def test_second_delete_raises(self, mock_thumbs, tmp_path):
+        conn = _make_db()
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        delete_meme(conn, meme["id"], tmp_path)
+        with pytest.raises(LookupError):
+            delete_meme(conn, meme["id"], tmp_path)
+
+    @patch("memebase.service.delete_thumbnails")
     def test_delete_in_collection(self, mock_thumbs, tmp_path):
         conn = _make_db()
         conn.execute(
@@ -205,7 +216,7 @@ class TestDeleteMeme:
         coll_dir.mkdir()
         f = coll_dir / "cat.png"
         f.write_bytes(b"meow")
-        meme, _ = register_meme(conn, f, collection="cats")
+        meme, _ = register_meme(conn, f, collection_id="coll-cats")
         filename = delete_meme(conn, meme["id"], tmp_path)
         assert filename == "cat.png"
         assert not f.exists()
@@ -235,7 +246,7 @@ class TestMoveMeme:
         coll_dir.mkdir()
         f = coll_dir / "meme.png"
         f.write_bytes(b"data")
-        meme, _ = register_meme(conn, f, collection="cats")
+        meme, _ = register_meme(conn, f, collection_id="coll-cats")
         move_meme(conn, meme["id"], None, tmp_path)
         assert (tmp_path / "meme.png").exists()
         assert not (coll_dir / "meme.png").exists()
@@ -265,6 +276,50 @@ class TestMoveMeme:
         assert (coll_dir / "meme_1.png").exists()
         row = conn.execute("SELECT filename FROM memes WHERE id = ?", (meme["id"],)).fetchone()
         assert row["filename"] == "meme_1.png"
+
+    def test_unknown_target_raises_before_touching_disk(self, tmp_path):
+        conn = _make_db()
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        with pytest.raises(LookupError):
+            move_meme(conn, meme["id"], "../../escape", tmp_path)
+        assert f.exists()
+        assert not (tmp_path.parent / "escape").exists()
+
+    def test_missing_file_raises(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        f.unlink()
+        with pytest.raises(FileNotFoundError):
+            move_meme(conn, meme["id"], "cats", tmp_path)
+
+
+class TestResolveCollection:
+    def test_empty_is_none(self):
+        conn = _make_db()
+        assert resolve_collection(conn, None) is None
+        assert resolve_collection(conn, "") is None
+
+    def test_known_slug(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        coll = resolve_collection(conn, "cats")
+        assert coll["slug"] == "cats"
+        assert coll["name"] == "Cats"
+
+    def test_unknown_slug_raises(self):
+        conn = _make_db()
+        with pytest.raises(LookupError):
+            resolve_collection(conn, "nope")
+
+    def test_traversal_slug_raises(self):
+        conn = _make_db()
+        with pytest.raises(LookupError):
+            resolve_collection(conn, "../../etc")
 
 
 class TestCreateCollection:
@@ -298,15 +353,35 @@ class TestRenameCollection:
         coll_dir = tmp_path / "cats"
         f = coll_dir / "meme.png"
         f.write_bytes(b"data")
-        meme, _ = register_meme(conn, f, collection="cats")
+        meme, _ = register_meme(conn, f, collection_id=resolve_collection(conn, "cats")["id"])
         rename_collection(conn, "cats", "Dogs", tmp_path)
         from memebase.db import get_meme as db_get_meme
 
         updated = db_get_meme(conn, meme["id"])
         assert updated["collection"] == "dogs"
 
+    def test_unknown_raises(self, tmp_path):
+        conn = _make_db()
+        with pytest.raises(LookupError):
+            rename_collection(conn, "nope", "Dogs", tmp_path)
+
+    def test_stray_target_dir_raises_and_keeps_row(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        (tmp_path / "dogs").mkdir()
+        (tmp_path / "dogs" / "stray.png").write_bytes(b"x")
+        with pytest.raises(FileExistsError):
+            rename_collection(conn, "cats", "Dogs", tmp_path)
+        assert resolve_collection(conn, "cats")["name"] == "Cats"
+        assert (tmp_path / "cats").is_dir()
+
 
 class TestDeleteCollection:
+    def test_unknown_raises(self, tmp_path):
+        conn = _make_db()
+        with pytest.raises(LookupError):
+            delete_collection_if_empty(conn, "nope", tmp_path)
+
     def test_deletes_empty(self, tmp_path):
         conn = _make_db()
         create_collection(conn, "Cats", tmp_path)
@@ -321,6 +396,6 @@ class TestDeleteCollection:
         coll_dir = tmp_path / "cats"
         f = coll_dir / "meme.png"
         f.write_bytes(b"data")
-        register_meme(conn, f, collection="cats")
+        register_meme(conn, f, collection_id=resolve_collection(conn, "cats")["id"])
         with pytest.raises(sqlite3.IntegrityError):
             delete_collection_if_empty(conn, "cats", tmp_path)

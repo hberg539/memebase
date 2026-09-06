@@ -22,6 +22,8 @@ FAKE_MEME = {
     "collection": None,
 }
 
+FAKE_COLL = {"id": "coll-cats", "slug": "cats", "name": "Cats"}
+
 FAKE_SOURCE = {
     "source_url": "https://x.com/someone/status/123",
     "source_site": "twitter",
@@ -122,7 +124,8 @@ class TestUploadMemes:
         dest = tmp_path / "test.png"
         with (
             patch("memebase.app.get_db"),
-            patch("memebase.app.meme_file_dir", return_value=tmp_path),
+            patch("memebase.app.resolve_collection", return_value=FAKE_COLL) as mock_resolve,
+            patch("memebase.app.meme_file_dir", return_value=tmp_path) as mock_dir,
             patch("memebase.app.resolve_unique_path", return_value=(dest, "test.png")),
             patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)) as mock_reg,
         ):
@@ -135,8 +138,27 @@ class TestUploadMemes:
                 content_type="multipart/form-data",
             )
         assert resp.status_code == 201
+        assert mock_resolve.call_args[0][1] == "cats"
+        assert mock_dir.call_args[0][1] == "cats"
         mock_reg.assert_called_once()
-        assert mock_reg.call_args[1]["collection"] == "cats"
+        assert mock_reg.call_args[1]["collection_id"] == "coll-cats"
+
+    def test_upload_unknown_collection_returns_404(self, client, tmp_path):
+        with (
+            patch("memebase.app.get_db"),
+            patch("memebase.app.resolve_collection", side_effect=LookupError("nope")),
+            patch("memebase.app.register_meme") as mock_reg,
+        ):
+            resp = client.post(
+                "/api/memes",
+                data={
+                    "files": (BytesIO(b"\x89PNG"), "test.png"),
+                    "collection": "../../escape",
+                },
+                content_type="multipart/form-data",
+            )
+        assert resp.status_code == 404
+        mock_reg.assert_not_called()
 
 
 class TestUploadFromUrl:
@@ -203,6 +225,7 @@ class TestUploadFromUrl:
                 "memebase.app.scrape_url",
                 return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
             ),
+            patch("memebase.app.resolve_collection", return_value=FAKE_COLL),
             patch("memebase.app.meme_file_dir", return_value=tmp_path),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
             patch("memebase.app.get_db"),
@@ -214,7 +237,27 @@ class TestUploadFromUrl:
             )
         assert resp.status_code == 201
         mock_reg.assert_called_once()
-        assert mock_reg.call_args[1]["collection"] == "cats"
+        assert mock_reg.call_args[1]["collection_id"] == "coll-cats"
+
+    def test_url_download_unknown_collection_returns_404(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch("memebase.app.resolve_collection", side_effect=LookupError("nope")),
+            patch("memebase.app.scrape_url") as mock_scrape,
+        ):
+            resp = client.post(
+                "/api/memes/url",
+                json={"url": "http://example.com/meme.png", "collection": "nope"},
+            )
+        assert resp.status_code == 404
+        mock_scrape.assert_not_called()
+
+    def test_url_download_non_string_collection_returns_400(self, client):
+        resp = client.post(
+            "/api/memes/url",
+            json={"url": "http://example.com/meme.png", "collection": 5},
+        )
+        assert resp.status_code == 400
 
 
 class TestGetMeme:
@@ -338,6 +381,43 @@ class TestUpdateMeme:
         assert resp.status_code == 200
         mock_move.assert_called_once()
         assert resp.get_json()["collection"] == "cats"
+
+    def test_update_unknown_collection_returns_404(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_file_path",
+                return_value=("test.png", Path("/tmp/test.png"), None),
+            ),
+            patch("memebase.app.move_meme", side_effect=LookupError("Collection not found")),
+        ):
+            resp = client.put("/api/memes/test-uuid-1234", json={"collection": "../.."})
+        assert resp.status_code == 404
+
+    def test_update_collection_missing_file_returns_404(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_file_path",
+                return_value=("test.png", Path("/tmp/test.png"), MemeError.NOT_ON_DISK),
+            ),
+            patch("memebase.app.move_meme", side_effect=FileNotFoundError("missing")),
+        ):
+            resp = client.put("/api/memes/test-uuid-1234", json={"collection": "cats"})
+        assert resp.status_code == 404
+
+    def test_update_non_string_collection_returns_400(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_file_path",
+                return_value=("test.png", Path("/tmp/test.png"), None),
+            ),
+            patch("memebase.app.move_meme") as mock_move,
+        ):
+            resp = client.put("/api/memes/test-uuid-1234", json={"collection": 5})
+        assert resp.status_code == 400
+        mock_move.assert_not_called()
 
 
 class TestDeleteMeme:
@@ -543,6 +623,21 @@ class TestCollectionEndpoints:
         resp = client.post("/api/collections", json={"name": ""})
         assert resp.status_code == 400
 
+    def test_create_collection_bad_slug_returns_400(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.create_collection",
+                side_effect=ValueError("Name produces an empty slug"),
+            ),
+        ):
+            resp = client.post("/api/collections", json={"name": "!!!"})
+        assert resp.status_code == 400
+
+    def test_create_collection_non_string_name_returns_400(self, client):
+        resp = client.post("/api/collections", json={"name": 5})
+        assert resp.status_code == 400
+
     def test_create_collection_duplicate(self, client):
         with (
             patch("memebase.app.get_db"),
@@ -569,6 +664,39 @@ class TestCollectionEndpoints:
     def test_rename_collection_empty_name(self, client):
         resp = client.put("/api/collections/cats", json={"name": ""})
         assert resp.status_code == 400
+
+    def test_rename_collection_unknown_returns_404(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.rename_collection",
+                side_effect=LookupError("Collection not found"),
+            ),
+        ):
+            resp = client.put("/api/collections/nope", json={"name": "Dogs"})
+        assert resp.status_code == 404
+
+    def test_rename_collection_stray_dir_returns_409(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.rename_collection",
+                side_effect=FileExistsError("A folder named 'dogs' already exists"),
+            ),
+        ):
+            resp = client.put("/api/collections/cats", json={"name": "Dogs"})
+        assert resp.status_code == 409
+
+    def test_delete_collection_unknown_returns_404(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.delete_collection_if_empty",
+                side_effect=LookupError("Collection not found"),
+            ),
+        ):
+            resp = client.delete("/api/collections/nope")
+        assert resp.status_code == 404
 
     def test_delete_collection(self, client):
         with (

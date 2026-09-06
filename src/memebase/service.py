@@ -47,16 +47,31 @@ def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:
     return dest, basename
 
 
+def resolve_collection(conn: sqlite3.Connection, slug: str | None) -> dict | None:
+    """Resolve a client-supplied slug to its collections row ({id, slug, name}).
+
+    Returns None for an empty slug (meaning "no collection").
+    Raises LookupError if the slug does not match a collection. Paths must only
+    ever be built from the slug stored in the returned row, never from raw input.
+    """
+    if not slug:
+        return None
+    coll = get_collection(conn, slug)
+    if not coll:
+        raise LookupError("Collection not found")
+    return coll
+
+
 def register_meme(
     conn: sqlite3.Connection,
     file_path: Path,
-    collection: str | None = None,
+    collection_id: str | None = None,
     *,
     source: SourceMeta | None = None,
 ) -> tuple[Meme, bool]:
     """Hash file, check for duplicate, insert or return existing.
 
-    collection is a slug (or None), resolved to an id for storage. New
+    collection_id is the id of an existing collection (or None). New
     files are probed for width/height/duration. An optional scraped
     source (from a URL upload) is stored alongside. Duplicates are
     returned untouched.
@@ -72,10 +87,6 @@ def register_meme(
     file_size = file_path.stat().st_size
     basename = file_path.name
     ext = parse_ext(basename)
-    collection_id = None
-    if collection:
-        coll = get_collection(conn, collection)
-        collection_id = coll["id"] if coll else None
     file_meta = probe_file(file_path)
     insert_meme(
         conn,
@@ -174,32 +185,32 @@ def move_meme(
     """Move a meme to a different collection (or to no collection).
 
     target_collection is a slug (or None).
+    Raises LookupError if the meme or the target collection does not exist,
+    FileNotFoundError if the meme file is missing on disk.
     """
     result = get_meme_filename(conn, meme_id)
     if not result:
         raise LookupError("Not found")
     filename, current_slug = result
 
-    if current_slug == target_collection:
+    target = resolve_collection(conn, target_collection)
+    target_slug = target["slug"] if target else None
+    if current_slug == target_slug:
         return
 
-    src_dir = meme_file_dir(memes_dir, current_slug)
-    dst_dir = meme_file_dir(memes_dir, target_collection)
-    dst_dir.mkdir(parents=True, exist_ok=True)
+    src_path = meme_file_dir(memes_dir, current_slug) / filename
+    if not src_path.exists():
+        raise FileNotFoundError("File not found on disk")
 
-    src_path = src_dir / filename
+    dst_dir = meme_file_dir(memes_dir, target_slug)
+    dst_dir.mkdir(parents=True, exist_ok=True)
     dst_path, new_basename = resolve_unique_path(dst_dir, filename)
     src_path.rename(dst_path)
 
     if new_basename != filename:
         ext = parse_ext(new_basename)
         update_filename(conn, meme_id, new_basename, ext)
-
-    target_id = None
-    if target_collection:
-        coll = get_collection(conn, target_collection)
-        target_id = coll["id"] if coll else None
-    update_meme_collection(conn, meme_id, target_id)
+    update_meme_collection(conn, meme_id, target["id"] if target else None)
 
 
 def create_collection(conn: sqlite3.Connection, name: str, memes_dir: Path) -> dict:
@@ -214,14 +225,21 @@ def create_collection(conn: sqlite3.Connection, name: str, memes_dir: Path) -> d
 def rename_collection(
     conn: sqlite3.Connection, old_slug: str, new_name: str, memes_dir: Path
 ) -> dict:
-    """Rename a collection. Returns updated {slug, name}."""
-    new_slug = slugify(new_name)
-    coll = get_collection(conn, old_slug)
+    """Rename a collection. Returns updated {slug, name}.
+
+    Raises LookupError if the collection does not exist, ValueError if the new
+    name produces an empty slug, FileExistsError if a stray folder already
+    occupies the new slug on disk.
+    """
+    coll = resolve_collection(conn, old_slug)
     if not coll:
         raise LookupError("Collection not found")
-    update_collection(conn, coll["id"], new_slug, new_name)
-    old_dir = memes_dir / old_slug
+    new_slug = slugify(new_name)
+    old_dir = memes_dir / coll["slug"]
     new_dir = memes_dir / new_slug
+    if old_slug != new_slug and old_dir.exists() and new_dir.exists():
+        raise FileExistsError(f"A folder named '{new_slug}' already exists in the memes dir")
+    update_collection(conn, coll["id"], new_slug, new_name)
     if old_dir.exists() and old_slug != new_slug:
         old_dir.rename(new_dir)
     elif not new_dir.exists():
@@ -230,12 +248,15 @@ def rename_collection(
 
 
 def delete_collection_if_empty(conn: sqlite3.Connection, slug: str, memes_dir: Path) -> None:
-    """Delete a collection if it has no memes. Raises IntegrityError otherwise."""
-    coll = get_collection(conn, slug)
+    """Delete a collection if it has no memes.
+
+    Raises LookupError if it does not exist, IntegrityError if memes still reference it.
+    """
+    coll = resolve_collection(conn, slug)
     if not coll:
         raise LookupError("Collection not found")
     delete_collection(conn, coll["id"])
-    coll_dir = memes_dir / slug
+    coll_dir = memes_dir / coll["slug"]
     if coll_dir.exists():
         with contextlib.suppress(OSError):
             coll_dir.rmdir()

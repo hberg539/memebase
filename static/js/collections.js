@@ -114,6 +114,8 @@ collList.addEventListener("click", async (e) => {
 			await refreshCollections();
 			renderCollList();
 			populateDropdown();
+			// Cards carry the collection slug, so reload the grid to pick up the new one.
+			load(search.value);
 		} catch (err) {
 			showAlert(err.message, "error");
 		}
@@ -146,13 +148,25 @@ async function refreshCollections() {
 }
 
 async function loadCollections() {
-	const urlColl = new URLSearchParams(window.location.search).get("collection");
-	await refreshCollections();
-	if (urlColl && allCollections.some((c) => c.slug === urlColl)) {
-		activeCollection = urlColl;
+	// The grid only needs the active slug, so start loading it right away
+	// instead of waiting on the collections request.
+	activeCollection = new URLSearchParams(window.location.search).get("collection") || "";
+	const gridLoad = load();
+	try {
+		await refreshCollections();
+	} catch (err) {
+		showAlert(err.message, "error");
+		populateDropdown();
+		return;
+	}
+	if (activeCollection && !allCollections.some((c) => c.slug === activeCollection)) {
+		// Stale or bogus slug in the URL: fall back to the unfiled view.
+		activeCollection = "";
+		syncCollectionToUrl();
+		await gridLoad;
+		load();
 	}
 	populateDropdown();
-	load();
 }
 
 /* -- Init -- */

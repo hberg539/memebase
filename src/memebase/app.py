@@ -51,6 +51,7 @@ from memebase.service import (
     register_meme,
     rename_collection,
     rename_meme,
+    resolve_collection,
     resolve_unique_path,
 )
 from memebase.thumbnails import get_or_create_thumbnail
@@ -188,6 +189,23 @@ def create_app(config=None):
     # Collection endpoints
     # -------------------------------------------------------------------
 
+    def _json_name_field() -> str:
+        """Read a trimmed string "name" from the JSON body ("" if missing or not a string)."""
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        return name.strip() if isinstance(name, str) else ""
+
+    def _collection_slug(value) -> str | None:
+        """Normalize a client-supplied collection slug: "" and None mean no collection.
+
+        Raises ValueError for non-string values.
+        """
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("collection must be a string")
+        return value.strip() or None
+
     @app.route("/api/collections")
     def list_collections():
         with get_db() as conn:
@@ -196,28 +214,34 @@ def create_app(config=None):
 
     @app.route("/api/collections", methods=["POST"])
     def create_collection_route():
-        data = request.get_json()
-        name = (data or {}).get("name", "").strip()
+        name = _json_name_field()
         if not name:
             return jsonify({"error": "Name is required"}), 400
         try:
             with get_db() as conn:
                 coll = create_collection(conn, name, MEMES_DIR)
-        except (ValueError, sqlite3.IntegrityError) as e:
-            return jsonify({"error": str(e)}), 409
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "A collection with that name already exists"}), 409
         log.info("collection created: slug=%s name=%s", coll["slug"], coll["name"])
         return jsonify(coll), 201
 
     @app.route("/api/collections/<slug>", methods=["PUT"])
     def rename_collection_route(slug):
-        data = request.get_json()
-        name = (data or {}).get("name", "").strip()
+        name = _json_name_field()
         if not name:
             return jsonify({"error": "Name is required"}), 400
         try:
             with get_db() as conn:
                 coll = rename_collection(conn, slug, name, MEMES_DIR)
-        except (ValueError, sqlite3.IntegrityError) as e:
+        except LookupError:
+            return jsonify({"error": "Collection not found"}), 404
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "A collection with that name already exists"}), 409
+        except FileExistsError as e:
             return jsonify({"error": str(e)}), 409
         log.info(
             "collection renamed: old_slug=%s new_slug=%s name=%s", slug, coll["slug"], coll["name"]
@@ -229,6 +253,8 @@ def create_app(config=None):
         try:
             with get_db() as conn:
                 delete_collection_if_empty(conn, slug, MEMES_DIR)
+        except LookupError:
+            return jsonify({"error": "Collection not found"}), 404
         except sqlite3.IntegrityError:
             return jsonify({"error": "Collection still has memes"}), 409
         log.info("collection deleted: slug=%s", slug)
@@ -294,7 +320,11 @@ def create_app(config=None):
 
         results = []
         with get_db() as conn:
-            dest_dir = meme_file_dir(MEMES_DIR, collection)
+            try:
+                coll = resolve_collection(conn, collection)
+            except LookupError:
+                return jsonify({"error": "Collection not found"}), 404
+            dest_dir = meme_file_dir(MEMES_DIR, coll["slug"] if coll else None)
             dest_dir.mkdir(parents=True, exist_ok=True)
             for f in files:
                 ext = Path(f.filename).suffix.lower()
@@ -305,7 +335,7 @@ def create_app(config=None):
                 dest, basename = resolve_unique_path(dest_dir, basename)
                 f.save(dest)
 
-                meme, is_dup = register_meme(conn, dest, collection=collection)
+                meme, is_dup = register_meme(conn, dest, collection_id=coll["id"] if coll else None)
                 if is_dup:
                     meme["duplicate"] = True
                     log.info("upload skipped (duplicate): filename=%s id=%s", basename, meme["id"])
@@ -324,7 +354,17 @@ def create_app(config=None):
         if not url:
             return jsonify({"error": "No URL provided"}), 400
 
-        collection = (data or {}).get("collection", "").strip() or None
+        try:
+            collection = _collection_slug((data or {}).get("collection"))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+        # Validate the collection before the (slow) scrape so a bad slug fails fast.
+        with get_db() as conn:
+            try:
+                coll = resolve_collection(conn, collection)
+            except LookupError:
+                return jsonify({"error": "Collection not found"}), 404
 
         try:
             downloads = scrape_url(url, max_files=config["scrape"]["max_files"])
@@ -334,14 +374,16 @@ def create_app(config=None):
         results = []
         has_new = False
         with get_db() as conn:
-            dest_dir = meme_file_dir(MEMES_DIR, collection)
+            dest_dir = meme_file_dir(MEMES_DIR, coll["slug"] if coll else None)
             dest_dir.mkdir(parents=True, exist_ok=True)
             for basename, content, source in downloads:
                 dest, basename = resolve_unique_path(dest_dir, basename)
                 with open(dest, "wb") as f:
                     f.write(content)
 
-                meme, is_dup = register_meme(conn, dest, collection=collection, source=source)
+                meme, is_dup = register_meme(
+                    conn, dest, collection_id=coll["id"] if coll else None, source=source
+                )
                 if is_dup:
                     meme["duplicate"] = True
                     log.info("url upload skipped (duplicate): url=%s id=%s", url, meme["id"])
@@ -373,7 +415,7 @@ def create_app(config=None):
             if reason == MemeError.NOT_IN_DB:
                 return jsonify({"error": "Not found"}), 404
 
-            data = request.get_json()
+            data = request.get_json(silent=True) or {}
 
             # Update favorite
             favorite = data.get("favorite")
@@ -400,6 +442,9 @@ def create_app(config=None):
                 try:
                     new_filename = rename_meme(conn, meme_id, filename, new_name_stem, MEMES_DIR)
                     log.info("rename: id=%s old=%s new=%s", meme_id, filename, new_filename)
+                    # The file is already renamed on disk; commit so a failure in a later
+                    # step (e.g. the collection move) cannot roll back the matching DB row.
+                    conn.commit()
                 except FileExistsError:
                     return jsonify({"error": "A file with that name already exists"}), 409
                 except ValueError:
@@ -413,8 +458,15 @@ def create_app(config=None):
 
             # Move to different collection
             if "collection" in data:
-                new_coll = data["collection"] or None
-                move_meme(conn, meme_id, new_coll, MEMES_DIR)
+                try:
+                    new_coll = _collection_slug(data["collection"])
+                    move_meme(conn, meme_id, new_coll, MEMES_DIR)
+                except ValueError as e:
+                    return jsonify({"error": str(e)}), 400
+                except LookupError:
+                    return jsonify({"error": "Collection not found"}), 404
+                except FileNotFoundError:
+                    return jsonify({"error": "File not found on disk"}), 404
                 log.info("collection updated: id=%s collection=%s", meme_id, new_coll)
 
             result = get_meme(conn, meme_id)

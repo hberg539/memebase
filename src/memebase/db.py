@@ -214,16 +214,11 @@ def update_filename(conn: sqlite3.Connection, meme_id: str, filename: str, ext: 
 def delete_meme_row(conn: sqlite3.Connection, meme_id: str) -> tuple[str, str | None] | None:
     """Delete a meme row, returning (filename, collection_slug) for file cleanup, or None."""
     row = conn.execute(
-        "SELECT m.filename, c.slug AS collection "
-        "FROM memes m LEFT JOIN collections c ON m.collection_id = c.id "
-        "WHERE m.id = ?",
+        "DELETE FROM memes WHERE id = ? "
+        "RETURNING filename, (SELECT slug FROM collections WHERE id = memes.collection_id)",
         (meme_id,),
     ).fetchone()
-    if not row:
-        return None
-    result = (row["filename"], row["collection"])
-    conn.execute("DELETE FROM memes WHERE id = ?", (meme_id,))
-    return result
+    return (row[0], row[1]) if row else None
 
 
 # ---------------------------------------------------------------------------

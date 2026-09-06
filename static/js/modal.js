@@ -138,12 +138,19 @@ grid.addEventListener("click", (e) => {
 	mCopy.innerHTML =
 		icon(canCopy(filename) ? "clipboard" : "download", 14) +
 		(canCopy(filename) ? " Copy" : " Download");
+	const cardColl = card.dataset.collection || "";
 	let collHtml = '<option value="">No collection</option>';
 	for (const c of allCollections) {
-		const sel = c.slug === card.dataset.collection ? " selected" : "";
+		const sel = c.slug === cardColl ? " selected" : "";
 		collHtml += `<option value="${esc(c.slug)}"${sel}>${esc(c.name)}</option>`;
 	}
+	if (cardColl && !allCollections.some((c) => c.slug === cardColl)) {
+		// The card's collection is not in our (possibly stale) list. Keep it selected
+		// so saving without touching the dropdown does not move the meme.
+		collHtml += `<option value="${esc(cardColl)}" selected>${esc(cardColl)}</option>`;
+	}
 	mColl.innerHTML = collHtml;
+	mColl.dataset.original = cardColl;
 	autoOpenBtn.disabled = isVideo(filename);
 	autoOpenBtn.title = isVideo(filename) ? "Auto-detect is not available for videos" : "";
 	modal.showModal();
@@ -254,7 +261,9 @@ document.getElementById("m-save").addEventListener("click", async () => {
 		.split(",")
 		.map((t) => t.trim())
 		.filter(Boolean);
-	body.collection = mColl.value;
+	// Only send the collection when it actually changed, so a plain edit never
+	// triggers a file move on the server.
+	if (mColl.value !== mColl.dataset.original) body.collection = mColl.value;
 	try {
 		await Api.updateMeme(currentId, body);
 	} catch (e) {
