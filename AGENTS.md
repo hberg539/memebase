@@ -25,6 +25,8 @@ docker-compose up          # Run with Docker
 - `src/memebase/db.py` - SQLite database layer (queries, all SQL)
 - `src/memebase/migrate.py` - Migration runner using `PRAGMA user_version` to apply versioned schema changes at startup
 - `src/memebase/migrations/` - Numbered migration modules (e.g. `0001_initial_schema.py`), each with a `migrate(conn)` function
+- `src/memebase/scrape.py` - URL scraping via gallery-dl; captures each download's kwdict and maps it to source metadata (`ScrapedFile`, `source_from_kwdict`)
+- `src/memebase/probe.py` - Intrinsic media metadata (width/height via Pillow, duration via Pillow for GIFs and ffprobe for video); never raises
 - `src/memebase/temp.py` - Temp directory management (create unique temp dirs, cleanup on startup)
 - `src/memebase/util.py` - Shared utilities (filename sanitization, file hashing, config loading, tomllib re-export)
 
@@ -33,6 +35,7 @@ docker-compose up          # Run with Docker
 - `tests/test_ai.py` - Prompt building and AI response parsing tests
 - `tests/test_service.py` - Service layer tests (path resolution, meme registration)
 - `tests/test_migrate.py` - Migration system tests (fresh DB, idempotency)
+- `tests/test_probe.py` - Media probing tests (images, animated GIFs, ffprobe fallbacks; video cases skip without ffmpeg)
 
 **Frontend (vanilla JS, no build):**
 - `static/js/grid.js` - Grid rendering, search (300ms debounce), faceted filtering, pagination
@@ -52,7 +55,9 @@ docker-compose up          # Run with Docker
 
 ## Database Schema
 
-Two tables: `memes` (id PK, sha256 UNIQUE, size, filename, description, favorite, timestamps) and `tags` (meme_id + tag compound PK, cascading delete from memes).
+Two tables: `memes` (id PK, sha256 UNIQUE, size, filename, description, favorite, timestamps, plus nullable metadata columns: width, height, duration, source_url, source_site, source_author, source_text, source_date) and `tags` (meme_id + tag compound PK, cascading delete from memes).
+
+Metadata is probed on registration (`service.register_meme`) and never backfilled for older rows. Source columns are only written for URL uploads and only when the file is new; duplicates are returned untouched. `GET /api/memes/<id>` returns the full row for the detail modal; the list endpoint does not include metadata columns.
 
 ## Migrations
 

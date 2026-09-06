@@ -34,6 +34,12 @@ const Api = (() => {
 			return res.json();
 		},
 
+		async getMeme(id) {
+			const res = await fetch(`/api/memes/${encodeURIComponent(id)}`);
+			if (!res.ok) throw new Error("Not found");
+			return res.json();
+		},
+
 		async updateMeme(id, body) {
 			const res = await _json(`/api/memes/${encodeURIComponent(id)}`, "PUT", body);
 			if (!res.ok) {

@@ -58,6 +58,20 @@ class AiSuggestion(TypedDict, total=False):
     tags: list[str]
 
 
+class SourceMeta(TypedDict):
+    source_url: str
+    source_site: str
+    source_author: str
+    source_text: str
+    source_date: str | None
+
+
+class FileMeta(TypedDict):
+    width: int | None
+    height: int | None
+    duration: float | None
+
+
 class Meme(TypedDict):
     id: str
     sha256: str
@@ -68,4 +82,12 @@ class Meme(TypedDict):
     favorite: int
     created_at: str
     tags: list[str]
+    source_url: NotRequired[str | None]
+    source_site: NotRequired[str | None]
+    source_author: NotRequired[str | None]
+    source_text: NotRequired[str | None]
+    source_date: NotRequired[str | None]
+    width: NotRequired[int | None]
+    height: NotRequired[int | None]
+    duration: NotRequired[float | None]
     duplicate: NotRequired[bool]

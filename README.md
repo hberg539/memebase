@@ -34,6 +34,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
 - **Copy & download** - One click to copy a meme to your clipboard or download it
+- **Metadata** - Every upload gets its dimensions and duration recorded. Memes grabbed from a URL also remember where they came from: the site, who posted it, when, what the post said, and a link back
 - **Themes** - Ships with built-in themes and supports custom CSS themes
 - **Self-contained** - Everything lives in a single `./data` folder. Easy to back up, easy to move
 
@@ -148,11 +149,6 @@ Enabled by default. When enabled, the grid view serves small pre-generated thumb
 Set `thumbnails.enabled = true` in `./data/config.toml` and you're good to go. Thumbnails are generated on first view and cached to `data/thumbnails/`.
 
 **Video thumbnails** require [ffmpeg](https://ffmpeg.org/) installed on the host (included in the Docker image). If ffmpeg isn't available, videos just serve at full resolution.
-
-**Skip types**: Use `thumbnails.skip_types` to keep certain formats as-is in the grid. For example:
-- `["gif"]` - keep GIFs animated instead of showing a static first frame (this is the default)
-- `["mp4", "webm"]` - skip video thumbnails entirely
-- `["gif", "mp4", "webm"]` - only thumbnail static images
 
 ## AI auto-detect
 

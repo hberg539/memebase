@@ -84,6 +84,17 @@
 <div class="grid{{ ' masonry' if grid_layout == 'masonry' else '' }}" id="grid"></div>
 <div id="pagination"></div>
 
+<dialog id="info-modal">
+  <div class="modal-body">
+    <h3>Details</h3>
+    <dl id="info-list" class="info-list"></dl>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button class="btn-close" id="info-close">Close</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="modal">
   <div class="modal-body">
     <div id="m-media"></div>
@@ -92,6 +103,7 @@
       <span id="m-date"></span>
       <span id="m-size"></span>
       <span style="flex:1"></span>
+      <button class="btn-meta btn-info" id="m-info" title="Details" aria-label="Details"></button>
       <button class="btn-meta" id="m-copy">Copy</button>
     </div>
     <div>

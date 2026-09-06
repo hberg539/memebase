@@ -5,7 +5,7 @@ from flask import Flask, g
 
 from memebase.common import DB_PATH, MEMES_DIR, SORT_OPTIONS, THUMBNAILS_DIR
 from memebase.migrate import apply_migrations
-from memebase.schemas import Meme
+from memebase.schemas import FileMeta, Meme, SourceMeta
 from memebase.util import normalize_tags
 
 
@@ -53,7 +53,9 @@ def init_db() -> None:
 def get_meme(conn: sqlite3.Connection, meme_id: str) -> Meme | None:
     """Get a meme dict with tags by id, or None if not found."""
     row = conn.execute(
-        "SELECT id, sha256, size, filename, ext, description, favorite, created_at "
+        "SELECT id, sha256, size, filename, ext, description, favorite, created_at, "
+        "source_url, source_site, source_author, source_text, source_date, "
+        "width, height, duration "
         "FROM memes WHERE id = ?",
         (meme_id,),
     ).fetchone()
@@ -86,12 +88,37 @@ def find_by_sha256(conn: sqlite3.Connection, sha256: str) -> str | None:
 
 
 def insert_meme(
-    conn: sqlite3.Connection, meme_id: str, sha256: str, size: int, filename: str, ext: str
+    conn: sqlite3.Connection,
+    meme_id: str,
+    sha256: str,
+    size: int,
+    filename: str,
+    ext: str,
+    *,
+    file_meta: FileMeta | None = None,
+    source: SourceMeta | None = None,
 ) -> None:
-    """Insert a new meme row."""
+    """Insert a new meme row with optional probed file and scraped source metadata."""
+    fm: FileMeta = file_meta or {"width": None, "height": None, "duration": None}
     conn.execute(
-        "INSERT INTO memes (id, sha256, size, filename, ext) VALUES (?, ?, ?, ?, ?)",
-        (meme_id, sha256, size, filename, ext),
+        "INSERT INTO memes (id, sha256, size, filename, ext, width, height, duration, "
+        "source_url, source_site, source_author, source_text, source_date) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            meme_id,
+            sha256,
+            size,
+            filename,
+            ext,
+            fm["width"],
+            fm["height"],
+            fm["duration"],
+            source["source_url"] if source else None,
+            source["source_site"] if source else None,
+            source["source_author"] if source else None,
+            source["source_text"] if source else None,
+            source["source_date"] if source else None,
+        ),
     )
 
 

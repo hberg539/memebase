@@ -14,7 +14,8 @@ from memebase.db import (
     update_filename,
 )
 from memebase.log import get_logger
-from memebase.schemas import AiSuggestion, Meme, MemeError
+from memebase.probe import probe_file
+from memebase.schemas import AiSuggestion, Meme, MemeError, SourceMeta
 from memebase.thumbnails import delete_thumbnails
 from memebase.util import file_hash, parse_ext, sanitize_filename
 
@@ -34,8 +35,14 @@ def resolve_unique_path(directory: Path, basename: str) -> tuple[Path, str]:
     return dest, basename
 
 
-def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool]:
+def register_meme(
+    conn: sqlite3.Connection, file_path: Path, *, source: SourceMeta | None = None
+) -> tuple[Meme, bool]:
     """Hash file, check for duplicate, insert or return existing.
+
+    New files are probed for width/height/duration. An optional scraped
+    source (from a URL upload) is stored alongside. Duplicates are
+    returned untouched.
 
     Returns (meme_dict, is_duplicate).
     """
@@ -48,7 +55,8 @@ def register_meme(conn: sqlite3.Connection, file_path: Path) -> tuple[Meme, bool
     file_size = file_path.stat().st_size
     basename = file_path.name
     ext = parse_ext(basename)
-    insert_meme(conn, new_id, h, file_size, basename, ext)
+    file_meta = probe_file(file_path)
+    insert_meme(conn, new_id, h, file_size, basename, ext, file_meta=file_meta, source=source)
     return get_meme(conn, new_id), False
 
 

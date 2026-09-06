@@ -259,12 +259,12 @@ def create_app(config=None):
         results = []
         has_new = False
         with get_db() as conn:
-            for basename, content in downloads:
+            for basename, content, source in downloads:
                 dest, basename = resolve_unique_path(MEMES_DIR, basename)
                 with open(dest, "wb") as f:
                     f.write(content)
 
-                meme, is_dup = register_meme(conn, dest)
+                meme, is_dup = register_meme(conn, dest, source=source)
                 if is_dup:
                     meme["duplicate"] = True
                     log.info("url upload skipped (duplicate): url=%s id=%s", url, meme["id"])
@@ -280,6 +280,14 @@ def create_app(config=None):
                 results.append(meme)
 
         return jsonify(results), 201 if has_new else 200
+
+    @app.route("/api/memes/<meme_id>")
+    def get_meme_route(meme_id):
+        with get_db() as conn:
+            meme = get_meme(conn, meme_id)
+        if meme is None:
+            return jsonify({"error": "Not found"}), 404
+        return jsonify(meme)
 
     @app.route("/api/memes/<meme_id>", methods=["PUT"])
     def update_meme_route(meme_id):

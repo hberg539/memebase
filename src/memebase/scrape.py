@@ -1,5 +1,8 @@
 import shutil
 import threading
+from datetime import datetime
+from pathlib import Path
+from typing import Any, NamedTuple
 from urllib.parse import unquote, urlparse
 
 from gallery_dl import config as gdl_config
@@ -10,6 +13,7 @@ from gallery_dl.extractor.common import Extractor, Message
 
 from memebase.common import ALLOWED_EXTENSIONS
 from memebase.log import get_logger
+from memebase.schemas import SourceMeta
 from memebase.temp import make_temp_dir
 from memebase.util import sanitize_filename
 
@@ -27,6 +31,59 @@ _CONTENT_TYPE_EXT = {
 }
 
 _lock = threading.Lock()
+
+
+class ScrapedFile(NamedTuple):
+    basename: str
+    content: bytes
+    source: SourceMeta
+
+
+def _first_str(kwdict: dict[str, Any], *keys: str) -> str:
+    """Return the first non-empty string value found under *keys*."""
+    for key in keys:
+        value = kwdict.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _author_from(kwdict: dict[str, Any]) -> str:
+    """Pick an author handle/username from the varied shapes extractors use."""
+    for key in ("author", "user", "uploader", "account", "blog", "owner"):
+        value = kwdict.get(key)
+        if isinstance(value, dict):
+            handle = _first_str(value, "name", "handle", "username", "screen_name", "nick")
+            if handle:
+                return handle.lstrip("@")
+        elif isinstance(value, str) and value.strip():
+            return value.strip().lstrip("@")
+    return _first_str(kwdict, "blog_name", "username", "user_name").lstrip("@")
+
+
+def _date_from(kwdict: dict[str, Any]) -> str | None:
+    """Normalize gallery-dl's date to 'YYYY-MM-DD HH:MM:SS' (UTC) or None."""
+    value = kwdict.get("date")
+    if isinstance(value, datetime):
+        if value.year <= 1:  # gallery-dl's NullDatetime sentinel
+            return None
+        if value.tzinfo is not None:
+            value = value.astimezone(tz=None).replace(tzinfo=None)
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(value, str) and value.strip():
+        return value.strip()[:19].replace("T", " ")
+    return None
+
+
+def source_from_kwdict(url: str, kwdict: dict[str, Any]) -> SourceMeta:
+    """Map a gallery-dl kwdict to the source columns we store."""
+    return {
+        "source_url": url,
+        "source_site": _first_str(kwdict, "category"),
+        "source_author": _author_from(kwdict),
+        "source_text": _first_str(kwdict, "content", "text", "title", "caption", "description"),
+        "source_date": _date_from(kwdict),
+    }
 
 
 class _DirectMediaExtractor(Extractor):
@@ -90,9 +147,12 @@ class _LimitedDownloadJob(gdl_job.DownloadJob):
         if isinstance(parent, _LimitedDownloadJob):
             self._counter = parent._counter
             self._max_files = parent._max_files
+            self.file_meta = parent.file_meta
         else:
             self._counter = [0]
             self._max_files = max_files if max_files is not None else _DEFAULT_MAX_FILES
+            # final path on disk -> kwdict for that download
+            self.file_meta: dict[str, dict[str, Any]] = {}
 
     def handle_url(self, url, kwdict):
         if self._counter[0] >= self._max_files:
@@ -101,6 +161,9 @@ class _LimitedDownloadJob(gdl_job.DownloadJob):
         super().handle_url(url, kwdict)
         self._counter[0] += 1
         log.info("scrape: downloaded file %d/%d: %s", self._counter[0], self._max_files, url)
+        path = self.pathfmt.path if self.pathfmt else ""
+        if path and Path(path).is_file():
+            self.file_meta[str(Path(path).resolve())] = dict(kwdict)
 
 
 def _configure_gallery_dl(base_dir: str) -> None:
@@ -112,10 +175,11 @@ def _configure_gallery_dl(base_dir: str) -> None:
     gdl_config.set(("output",), "mode", "null")
 
 
-def scrape_url(url: str, *, max_files: int = _DEFAULT_MAX_FILES) -> list[tuple[str, bytes]]:
+def scrape_url(url: str, *, max_files: int = _DEFAULT_MAX_FILES) -> list[ScrapedFile]:
     """Use gallery-dl to scrape media from a URL.
 
-    Returns a list of (sanitized_basename, content_bytes) tuples.
+    Returns a list of ScrapedFile(basename, content, source) tuples, where
+    source holds the post metadata gallery-dl attached to that download.
     Raises ValueError on failure or if no media is found.
     """
     log.info("scrape: starting gallery-dl for %s", url)
@@ -124,12 +188,14 @@ def scrape_url(url: str, *, max_files: int = _DEFAULT_MAX_FILES) -> list[tuple[s
     try:
         with _lock:
             _configure_gallery_dl(str(tmp_path))
+            job = _LimitedDownloadJob(url, max_files=max_files)
             try:
-                _LimitedDownloadJob(url, max_files=max_files).run()
+                job.run()
             except Exception as e:
                 log.warning("scrape: gallery-dl failed for %s: %s", url, e)
                 raise ValueError(f"gallery-dl failed: {e}") from e
         log.info("scrape: gallery-dl finished for %s", url)
+        file_meta = getattr(job, "file_meta", None) or {}
 
         results = []
         for f in tmp_path.rglob("*"):
@@ -140,7 +206,8 @@ def scrape_url(url: str, *, max_files: int = _DEFAULT_MAX_FILES) -> list[tuple[s
                 continue
             basename = sanitize_filename(f.name)
             content = f.read_bytes()
-            results.append((basename, content))
+            kwdict = file_meta.get(str(f.resolve()), {})
+            results.append(ScrapedFile(basename, content, source_from_kwdict(url, kwdict)))
             log.info("scrape: collected %s (%d bytes)", basename, len(content))
             if len(results) >= max_files:
                 break

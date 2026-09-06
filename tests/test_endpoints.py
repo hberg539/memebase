@@ -6,6 +6,7 @@ import pytest
 
 from memebase.app import create_app
 from memebase.schemas import MemeError
+from memebase.scrape import ScrapedFile
 
 FAKE_MEME = {
     "id": "test-id-1234",
@@ -17,6 +18,14 @@ FAKE_MEME = {
     "favorite": 0,
     "created_at": "2024-01-01 00:00:00",
     "tags": [],
+}
+
+FAKE_SOURCE = {
+    "source_url": "https://x.com/someone/status/123",
+    "source_site": "twitter",
+    "source_author": "someone",
+    "source_text": "lol",
+    "source_date": "2024-01-01 00:00:00",
 }
 
 TEST_CONFIG = {
@@ -125,10 +134,15 @@ class TestUploadFromUrl:
     def test_new_file_returns_201(self, client, tmp_path):
         dest = tmp_path / "meme.png"
         with (
-            patch("memebase.app.scrape_url", return_value=[("meme.png", b"imgdata")]),
+            patch(
+                "memebase.app.scrape_url",
+                return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
+            ),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
             patch("memebase.app.get_db"),
-            patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)),
+            patch(
+                "memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)
+            ) as mock_register,
         ):
             resp = client.post("/api/memes/url", json={"url": "http://example.com/meme.png"})
         assert resp.status_code == 201
@@ -136,11 +150,15 @@ class TestUploadFromUrl:
         assert len(data) == 1
         assert data[0]["id"] == "test-id-1234"
         assert dest.read_bytes() == b"imgdata"
+        assert mock_register.call_args.kwargs["source"] == FAKE_SOURCE
 
     def test_duplicate_returns_200(self, client, tmp_path):
         dest = tmp_path / "meme.png"
         with (
-            patch("memebase.app.scrape_url", return_value=[("meme.png", b"imgdata")]),
+            patch(
+                "memebase.app.scrape_url",
+                return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
+            ),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
             patch("memebase.app.get_db"),
             patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), True)),
@@ -150,6 +168,23 @@ class TestUploadFromUrl:
         data = resp.get_json()
         assert len(data) == 1
         assert data[0]["duplicate"] is True
+
+
+class TestGetMeme:
+    def test_not_found_returns_404(self, client):
+        with patch("memebase.app.get_db"), patch("memebase.app.get_meme", return_value=None):
+            resp = client.get("/api/memes/unknown")
+        assert resp.status_code == 404
+
+    def test_returns_meme_with_metadata(self, client):
+        meme = {**FAKE_MEME, **FAKE_SOURCE, "width": 640, "height": 480, "duration": 2.5}
+        with patch("memebase.app.get_db"), patch("memebase.app.get_meme", return_value=meme):
+            resp = client.get("/api/memes/test-id-1234")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["source_url"] == FAKE_SOURCE["source_url"]
+        assert data["width"] == 640
+        assert data["duration"] == 2.5
 
 
 class TestUpdateMeme:

@@ -7,7 +7,82 @@ const mExt = document.getElementById("m-ext");
 const mTags = document.getElementById("m-tags");
 const mDesc = document.getElementById("m-desc");
 const mDate = document.getElementById("m-date");
+const infoModal = document.getElementById("info-modal");
+const infoList = document.getElementById("info-list");
 let currentId = null;
+let currentMeta = null;
+
+/* -- Metadata (prefetched on open for the info modal) -- */
+
+async function loadMeta(id) {
+	currentMeta = null;
+	try {
+		const meme = await Api.getMeme(id);
+		if (currentId === id) currentMeta = meme;
+	} catch {
+		/* the info button fetches on demand if this failed */
+	}
+}
+
+/* -- Info modal (all metadata) -- */
+
+function formatDuration(seconds) {
+	const total = Math.round(seconds);
+	const m = Math.floor(total / 60);
+	const s = total % 60;
+	return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function infoRows(meme) {
+	const rows = [
+		["Filename", meme.filename],
+		["Type", meme.ext ? meme.ext.toUpperCase() : ""],
+		["Size", formatSize(meme.size)],
+		["Dimensions", meme.width && meme.height ? `${meme.width}x${meme.height}` : ""],
+		["Duration", meme.duration ? formatDuration(meme.duration) : ""],
+		["Added", (meme.created_at || "").replace("T", " ")],
+		["Tags", (meme.tags || []).join(", ")],
+	];
+	if (meme.source_url) {
+		rows.push(
+			["Site", meme.source_site],
+			["Author", meme.source_author ? `@${meme.source_author}` : ""],
+			["Posted", meme.source_date],
+			["Post text", meme.source_text],
+			["URL", meme.source_url],
+		);
+	}
+	return rows.filter(([, v]) => v);
+}
+
+function renderInfo(meme) {
+	infoList.innerHTML = infoRows(meme)
+		.map(([k, v]) => {
+			const value =
+				k === "URL"
+					? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>`
+					: esc(v);
+			return `<dt>${esc(k)}</dt><dd>${value}</dd>`;
+		})
+		.join("");
+}
+
+document.getElementById("m-info").addEventListener("click", async () => {
+	let meme = currentMeta;
+	if (!meme) {
+		try {
+			meme = await Api.getMeme(currentId);
+			currentMeta = meme;
+		} catch {
+			showAlert("Could not load details", "error");
+			return;
+		}
+	}
+	renderInfo(meme);
+	infoModal.showModal();
+});
+
+wireDialog(infoModal, { cancel: "info-close" });
 
 const autoOpenBtn = document.getElementById("m-auto-open");
 if (!window.AI_ENABLED) autoOpenBtn.style.display = "none";
@@ -57,6 +132,7 @@ grid.addEventListener("click", (e) => {
 	mFav.classList.toggle("active", isFav);
 	mDate.textContent = card.dataset.created ? card.dataset.created.replace("T", " ") : "";
 	document.getElementById("m-size").textContent = formatSize(Number(card.dataset.size) || 0);
+	document.getElementById("m-info").innerHTML = icon("info", 18);
 	const mCopy = document.getElementById("m-copy");
 	mCopy.innerHTML =
 		icon(canCopy(filename) ? "clipboard" : "download", 14) +
@@ -66,6 +142,7 @@ grid.addEventListener("click", (e) => {
 	modal.showModal();
 	modal.focus();
 	refreshIcons();
+	loadMeta(currentId);
 });
 
 /* -- Favorite -- */

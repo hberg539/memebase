@@ -2,6 +2,7 @@ import sqlite3
 from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from memebase.migrate import apply_migrations
 from memebase.service import delete_meme, register_meme, rename_meme, resolve_unique_path
@@ -59,6 +60,56 @@ class TestRegisterMeme:
         assert is_dup2
         assert meme2["id"] == meme1["id"]
         assert f2.exists()
+
+    def test_probes_image_dimensions(self, tmp_path):
+        conn = self._make_db()
+        f = tmp_path / "real.png"
+        Image.new("RGB", (320, 200)).save(f)
+        meme, _ = register_meme(conn, f)
+        assert meme["width"] == 320
+        assert meme["height"] == 200
+        assert meme["duration"] is None
+
+    def test_stores_source(self, tmp_path):
+        conn = self._make_db()
+        f = tmp_path / "tweet.png"
+        f.write_bytes(b"content")
+        source = {
+            "source_url": "https://x.com/a/status/1",
+            "source_site": "twitter",
+            "source_author": "a",
+            "source_text": "hello",
+            "source_date": "2024-01-02 03:04:05",
+        }
+        meme, _ = register_meme(conn, f, source=source)
+        for key, value in source.items():
+            assert meme[key] == value
+
+    def test_no_source_leaves_columns_null(self, tmp_path):
+        conn = self._make_db()
+        f = tmp_path / "plain.png"
+        f.write_bytes(b"content")
+        meme, _ = register_meme(conn, f)
+        assert meme["source_url"] is None
+        assert meme["source_site"] is None
+
+    def test_duplicate_does_not_attach_source(self, tmp_path):
+        conn = self._make_db()
+        f1 = tmp_path / "first.png"
+        f1.write_bytes(b"same")
+        register_meme(conn, f1)
+        f2 = tmp_path / "second.png"
+        f2.write_bytes(b"same")
+        source = {
+            "source_url": "https://x.com/a/status/1",
+            "source_site": "twitter",
+            "source_author": "a",
+            "source_text": "",
+            "source_date": None,
+        }
+        meme, is_dup = register_meme(conn, f2, source=source)
+        assert is_dup
+        assert meme["source_url"] is None
 
 
 class TestRenameMeme:
