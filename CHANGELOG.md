@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0](https://github.com/hberg539/memebase/compare/v0.8.2...v0.9.0) (2026-09-06)
+
+
+### Features
+
+* **migrate:** add post_migrate hooks and backfill media metadata ([6e763cf](https://github.com/hberg539/memebase/commit/6e763cf19fcf7c802ef40be4a15bcc1441a0f3d2))
+* store upload metadata and show it in a details dialog ([8127ed1](https://github.com/hberg539/memebase/commit/8127ed160473a32439d49ee5f3a3b0fe73da8273))
+
+
+### Build System
+
+* update all dependencies to latest versions ([e3bae34](https://github.com/hberg539/memebase/commit/e3bae34d2b64907527ffb281e772296584e3ae18))
+
+
+### CI/CD
+
+* pin setup-uv to v10.0.1 ([90e1941](https://github.com/hberg539/memebase/commit/90e19410dd76236f02ab068627e073aa8f85693e))
+
 ## [0.8.2](https://github.com/hberg539/memebase/compare/v0.8.1...v0.8.2) (2026-03-04)
 
 
