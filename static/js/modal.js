@@ -132,7 +132,7 @@ grid.addEventListener("click", (e) => {
 	mFav.classList.toggle("active", isFav);
 	mDate.textContent = card.dataset.created ? card.dataset.created.replace("T", " ") : "";
 	document.getElementById("m-size").textContent = formatSize(Number(card.dataset.size) || 0);
-	document.getElementById("m-info").innerHTML = icon("info", 18);
+	document.getElementById("m-info").innerHTML = `${icon("info", 14)} Details`;
 	const mCopy = document.getElementById("m-copy");
 	mCopy.innerHTML =
 		icon(canCopy(filename) ? "clipboard" : "download", 14) +

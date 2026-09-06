@@ -426,11 +426,6 @@ dialog.closing::backdrop {
 	color: var(--color-meta-hover);
 	border-color: var(--color-meta-hover);
 }
-.btn-info {
-	border: none;
-	padding: 0.2rem;
-	justify-content: center;
-}
 .info-list {
 	display: grid;
 	grid-template-columns: auto 1fr;
@@ -462,6 +457,13 @@ dialog.closing::backdrop {
 }
 .modal-fav:hover {
 	color: var(--color-accent-red);
+}
+.modal-info {
+	cursor: pointer !important;
+	user-select: none;
+}
+.modal-info:hover {
+	color: var(--color-text-primary);
 }
 .modal-fav.active svg {
 	fill: var(--color-accent-red);
