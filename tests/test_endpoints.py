@@ -173,7 +173,10 @@ class TestUploadFromUrl:
         assert resp.get_json()["error"] == "No URL provided"
 
     def test_scrape_error_returns_400(self, client):
-        with patch("memebase.app.scrape_url", side_effect=ValueError("bad url")):
+        with (
+            patch("memebase.app.get_db"),
+            patch("memebase.app.scrape_url", side_effect=ValueError("bad url")),
+        ):
             resp = client.post("/api/memes/url", json={"url": "http://example.com/x.png"})
         assert resp.status_code == 400
         assert resp.get_json()["error"] == "bad url"
