@@ -104,7 +104,7 @@ collList.addEventListener("click", async (e) => {
 		const slug = renameBtn.dataset.slug;
 		const current = allCollections.find((c) => c.slug === slug);
 		const newName = prompt("New name:", current?.name || "");
-		if (!newName || !newName.trim()) return;
+		if (!newName?.trim()) return;
 		try {
 			const updated = await Api.renameCollection(slug, newName.trim());
 			if (activeCollection === slug) {
