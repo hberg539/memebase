@@ -1,3 +1,4 @@
+import sqlite3
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
@@ -18,6 +19,7 @@ FAKE_MEME = {
     "favorite": 0,
     "created_at": "2024-01-01 00:00:00",
     "tags": [],
+    "collection": None,
 }
 
 FAKE_SOURCE = {
@@ -68,6 +70,7 @@ class TestUploadMemes:
         with (
             patch("memebase.app.get_db"),
             patch("memebase.app.register_meme") as mock_register,
+            patch("memebase.app.meme_file_dir", return_value=Path("/tmp")),
         ):
             resp = client.post(
                 "/api/memes",
@@ -82,6 +85,7 @@ class TestUploadMemes:
         dest = tmp_path / "test.png"
         with (
             patch("memebase.app.get_db"),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "test.png")),
             patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)),
         ):
@@ -100,6 +104,7 @@ class TestUploadMemes:
         dest = tmp_path / "test.png"
         with (
             patch("memebase.app.get_db"),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "test.png")),
             patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), True)),
         ):
@@ -112,6 +117,26 @@ class TestUploadMemes:
         data = resp.get_json()
         assert len(data) == 1
         assert data[0]["duplicate"] is True
+
+    def test_upload_with_collection(self, client, tmp_path):
+        dest = tmp_path / "test.png"
+        with (
+            patch("memebase.app.get_db"),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
+            patch("memebase.app.resolve_unique_path", return_value=(dest, "test.png")),
+            patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)) as mock_reg,
+        ):
+            resp = client.post(
+                "/api/memes",
+                data={
+                    "files": (BytesIO(b"\x89PNG"), "test.png"),
+                    "collection": "cats",
+                },
+                content_type="multipart/form-data",
+            )
+        assert resp.status_code == 201
+        mock_reg.assert_called_once()
+        assert mock_reg.call_args[1]["collection"] == "cats"
 
 
 class TestUploadFromUrl:
@@ -138,6 +163,7 @@ class TestUploadFromUrl:
                 "memebase.app.scrape_url",
                 return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
             ),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
             patch("memebase.app.get_db"),
             patch(
@@ -159,6 +185,7 @@ class TestUploadFromUrl:
                 "memebase.app.scrape_url",
                 return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
             ),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
             patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
             patch("memebase.app.get_db"),
             patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), True)),
@@ -168,6 +195,26 @@ class TestUploadFromUrl:
         data = resp.get_json()
         assert len(data) == 1
         assert data[0]["duplicate"] is True
+
+    def test_url_download_with_collection(self, client, tmp_path):
+        dest = tmp_path / "meme.png"
+        with (
+            patch(
+                "memebase.app.scrape_url",
+                return_value=[ScrapedFile("meme.png", b"imgdata", FAKE_SOURCE)],
+            ),
+            patch("memebase.app.meme_file_dir", return_value=tmp_path),
+            patch("memebase.app.resolve_unique_path", return_value=(dest, "meme.png")),
+            patch("memebase.app.get_db"),
+            patch("memebase.app.register_meme", return_value=(FAKE_MEME.copy(), False)) as mock_reg,
+        ):
+            resp = client.post(
+                "/api/memes/url",
+                json={"url": "http://example.com/meme.png", "collection": "cats"},
+            )
+        assert resp.status_code == 201
+        mock_reg.assert_called_once()
+        assert mock_reg.call_args[1]["collection"] == "cats"
 
 
 class TestGetMeme:
@@ -231,15 +278,18 @@ class TestUpdateMeme:
         mock_desc.assert_called_once()
         assert resp.get_json()["description"] == "a funny meme"
 
-    def test_rename_collision_returns_409(self, client, tmp_path):
-        (tmp_path / "new_name.png").write_bytes(b"existing")
+    def test_rename_collision_returns_409(self, client):
         with (
             patch("memebase.app.get_db"),
             patch(
                 "memebase.app.get_meme_file_path",
-                return_value=("old.png", tmp_path / "old.png", None),
+                return_value=("old.png", Path("/tmp/old.png"), None),
             ),
-            patch("memebase.app.MEMES_DIR", tmp_path),
+            patch(
+                "memebase.app.rename_meme",
+                side_effect=FileExistsError("A file with that name already exists"),
+            ),
+            patch("memebase.app.get_meme", return_value=FAKE_MEME.copy()),
         ):
             resp = client.put("/api/memes/test-id", json={"new_name": "new_name"})
         assert resp.status_code == 409
@@ -273,6 +323,21 @@ class TestUpdateMeme:
         assert resp.status_code == 200
         mock_tags.assert_called_once()
         assert resp.get_json()["tags"] == ["funny", "cats"]
+
+    def test_update_collection(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_file_path",
+                return_value=("test.png", Path("/tmp/test.png"), None),
+            ),
+            patch("memebase.app.move_meme") as mock_move,
+            patch("memebase.app.get_meme", return_value={**FAKE_MEME, "collection": "cats"}),
+        ):
+            resp = client.put("/api/memes/test-uuid-1234", json={"collection": "cats"})
+        assert resp.status_code == 200
+        mock_move.assert_called_once()
+        assert resp.get_json()["collection"] == "cats"
 
 
 class TestDeleteMeme:
@@ -445,3 +510,120 @@ class TestBulkTags:
         assert resp.status_code == 200
         assert mock_remove.call_count == 1
         mock_add.assert_not_called()
+
+
+class TestCollectionEndpoints:
+    def test_list_collections(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_all_collections",
+                return_value=[{"slug": "cats", "name": "Cats"}],
+            ),
+        ):
+            resp = client.get("/api/collections")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert len(data) == 1
+        assert data[0]["slug"] == "cats"
+
+    def test_create_collection(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.create_collection",
+                return_value={"slug": "cats", "name": "Cats"},
+            ),
+        ):
+            resp = client.post("/api/collections", json={"name": "Cats"})
+        assert resp.status_code == 201
+        assert resp.get_json()["slug"] == "cats"
+
+    def test_create_collection_empty_name(self, client):
+        resp = client.post("/api/collections", json={"name": ""})
+        assert resp.status_code == 400
+
+    def test_create_collection_duplicate(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.create_collection",
+                side_effect=sqlite3.IntegrityError("UNIQUE constraint failed"),
+            ),
+        ):
+            resp = client.post("/api/collections", json={"name": "Cats"})
+        assert resp.status_code == 409
+
+    def test_rename_collection(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.rename_collection",
+                return_value={"slug": "dogs", "name": "Dogs"},
+            ),
+        ):
+            resp = client.put("/api/collections/cats", json={"name": "Dogs"})
+        assert resp.status_code == 200
+        assert resp.get_json()["slug"] == "dogs"
+
+    def test_rename_collection_empty_name(self, client):
+        resp = client.put("/api/collections/cats", json={"name": ""})
+        assert resp.status_code == 400
+
+    def test_delete_collection(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch("memebase.app.delete_collection_if_empty"),
+        ):
+            resp = client.delete("/api/collections/cats")
+        assert resp.status_code == 204
+
+    def test_delete_collection_nonempty(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.delete_collection_if_empty",
+                side_effect=sqlite3.IntegrityError("FOREIGN KEY constraint failed"),
+            ),
+        ):
+            resp = client.delete("/api/collections/cats")
+        assert resp.status_code == 409
+        assert "still has memes" in resp.get_json()["error"]
+
+    def test_list_memes_with_collection(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.query_memes",
+                return_value={
+                    "memes": [],
+                    "total": 0,
+                    "filters": {"exts": {}, "tags": {}, "fav_count": 0},
+                },
+            ) as mock_query,
+        ):
+            resp = client.get("/api/memes?collection=cats")
+        assert resp.status_code == 200
+        mock_query.assert_called_once()
+        call_kwargs = mock_query.call_args
+        assert call_kwargs[1]["collection"] == "cats"
+        assert call_kwargs[1]["has_collection_param"] is True
+
+    def test_list_memes_no_collection_param(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.query_memes",
+                return_value={
+                    "memes": [],
+                    "total": 0,
+                    "filters": {"exts": {}, "tags": {}, "fav_count": 0},
+                },
+            ) as mock_query,
+        ):
+            resp = client.get("/api/memes?collection=")
+        assert resp.status_code == 200
+        mock_query.assert_called_once()
+        call_kwargs = mock_query.call_args
+        assert call_kwargs[1]["collection"] is None
+        assert call_kwargs[1]["has_collection_param"] is True

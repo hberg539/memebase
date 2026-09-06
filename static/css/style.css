@@ -49,26 +49,23 @@ header h1 {
 		background-position: 200% center;
 	}
 }
-header input {
-	flex: 1;
-	min-width: 200px;
-	padding: 0.5rem 0.75rem;
-	border-radius: 6px;
-	border: 1px solid var(--color-border-primary);
-	background: var(--color-bg-surface);
-	color: var(--color-text-primary);
-	font-size: 1rem;
-}
-header input::placeholder {
-	color: var(--color-text-placeholder);
-}
+header input,
 header select {
+	height: 2.375rem;
 	padding: 0.5rem 0.75rem;
 	border-radius: 6px;
 	border: 1px solid var(--color-border-primary);
 	background: var(--color-bg-surface);
 	color: var(--color-text-primary);
 	font-size: 0.9rem;
+}
+header input {
+	flex: 1;
+	min-width: 200px;
+	font-size: 1rem;
+}
+header input::placeholder {
+	color: var(--color-text-placeholder);
 }
 .grid {
 	display: grid;
@@ -821,4 +818,67 @@ dialog.closing::backdrop {
 .drop-zone-hint {
 	font-size: 0.8rem;
 	color: var(--color-text-faint);
+}
+.collection-picker {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+}
+#collection-select {
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	border: 1px solid var(--color-border-primary);
+	background: var(--color-bg-surface);
+	color: var(--color-text-primary);
+	font-size: 0.9rem;
+	height: 2.375rem;
+}
+.btn-icon {
+	background: none;
+	border: 1px solid var(--color-border-primary);
+	border-radius: 6px;
+	color: var(--color-text-secondary);
+	padding: 0 0.5rem;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 2.375rem;
+}
+.btn-icon:hover {
+	background: var(--color-bg-surface);
+	color: var(--color-text-primary);
+}
+.coll-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.4rem 0;
+}
+.coll-row .coll-name {
+	flex: 1;
+	font-size: 0.95rem;
+}
+.coll-add-row {
+	display: flex;
+	gap: 0.5rem;
+}
+.coll-add-row input {
+	flex: 1;
+}
+.coll-empty {
+	font-size: 0.85rem;
+	color: var(--color-text-faint);
+	text-align: center;
+	padding: 0.5rem 0;
+}
+#m-collection {
+	width: 100%;
+	padding: 0.5rem;
+	border-radius: 6px;
+	border: 1px solid var(--color-border-primary);
+	background: var(--color-bg-body);
+	color: var(--color-text-primary);
+	font-size: 0.95rem;
+	font-family: inherit;
 }

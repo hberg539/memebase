@@ -64,7 +64,7 @@ function buildCardHtml(m, isNew) {
 		? `<div class="card-tags">${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</div>`
 		: "";
 	return `
-    <div class="card${isNew ? " card-new" : ""}" data-id="${esc(m.id)}" data-filename="${esc(m.filename)}" data-desc="${esc(m.description)}" data-tags="${esc(m.tags.join(","))}" data-created="${esc(m.created_at || "")}" data-fav="${m.favorite || 0}" data-size="${m.size || 0}">
+    <div class="card${isNew ? " card-new" : ""}" data-id="${esc(m.id)}" data-filename="${esc(m.filename)}" data-desc="${esc(m.description)}" data-tags="${esc(m.tags.join(","))}" data-created="${esc(m.created_at || "")}" data-fav="${m.favorite || 0}" data-size="${m.size || 0}" data-collection="${esc(m.collection || "")}">
       <button class="btn-fav${m.favorite ? " active" : ""}" title="Favorite">${icon(m.favorite ? "heart" : "heart", 18)}</button>
       <button class="btn-copy" data-src="${src}" data-filename="${esc(m.filename)}">${icon(canCopy(m.filename) ? "clipboard" : "download", 18)}</button>
       ${media}
@@ -98,6 +98,7 @@ async function load(q = "") {
 	if (activeExtFilter) params.set("ext", activeExtFilter);
 	for (const t of activeTagFilters) params.append("tag", t);
 	if (activeFavFilter) params.set("fav", "1");
+	params.set("collection", activeCollection);
 	const data = await Api.listMemes(params);
 	allMemes = data.memes;
 	totalMemes = data.total;

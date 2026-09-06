@@ -1,4 +1,5 @@
 import re
+import sqlite3
 from pathlib import Path
 
 from flask import (
@@ -24,6 +25,7 @@ from memebase.common import (
 from memebase.config import load_version
 from memebase.db import (
     add_tags,
+    get_all_collections,
     get_all_tags,
     get_db,
     get_meme,
@@ -40,9 +42,14 @@ from memebase.schemas import MemeError
 from memebase.scrape import scrape_url
 from memebase.service import (
     apply_ai_suggestions,
+    create_collection,
+    delete_collection_if_empty,
     delete_meme,
     get_meme_file_path,
+    meme_file_dir,
+    move_meme,
     register_meme,
+    rename_collection,
     rename_meme,
     resolve_unique_path,
 )
@@ -116,12 +123,13 @@ def create_app(config=None):
             result = get_meme_for_serving(conn, meme_id)
         if not result:
             return _not_found_image()
-        real_filename, sha256 = result
+        real_filename, sha256, collection = result
         etag = f'"{sha256}"'
         if request.headers.get("If-None-Match") == etag:
             return "", 304
+        serve_dir = meme_file_dir(MEMES_DIR, collection)
         try:
-            resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+            resp = make_response(send_from_directory(serve_dir, real_filename))
         except NotFound:
             return _not_found_image()
         resp.headers["ETag"] = etag
@@ -134,9 +142,9 @@ def create_app(config=None):
             result = get_meme_for_serving(conn, meme_id)
         if not result:
             return _not_found_image()
-        real_filename, sha256 = result
+        real_filename, sha256, collection = result
 
-        source_path = MEMES_DIR / real_filename
+        source_path = meme_file_dir(MEMES_DIR, collection) / real_filename
         thumb_path = get_or_create_thumbnail(meme_id, source_path, config["thumbnails"])
 
         if thumb_path and thumb_path.exists():
@@ -152,11 +160,12 @@ def create_app(config=None):
             return resp
 
         # Fallback: serve original file
+        serve_dir = meme_file_dir(MEMES_DIR, collection)
         etag = f'"{sha256}"'
         if request.headers.get("If-None-Match") == etag:
             return "", 304
         try:
-            resp = make_response(send_from_directory(MEMES_DIR, real_filename))
+            resp = make_response(send_from_directory(serve_dir, real_filename))
         except NotFound:
             return _not_found_image()
         resp.headers["ETag"] = etag
@@ -174,6 +183,60 @@ def create_app(config=None):
         if (BUILTIN_THEMES_DIR / filename).is_file():
             return send_from_directory(BUILTIN_THEMES_DIR, filename)
         return send_from_directory(BUILTIN_THEMES_DIR, f"{DEFAULT_THEME}.css")
+
+    # -------------------------------------------------------------------
+    # Collection endpoints
+    # -------------------------------------------------------------------
+
+    @app.route("/api/collections")
+    def list_collections():
+        with get_db() as conn:
+            collections = get_all_collections(conn)
+        return jsonify(collections)
+
+    @app.route("/api/collections", methods=["POST"])
+    def create_collection_route():
+        data = request.get_json()
+        name = (data or {}).get("name", "").strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        try:
+            with get_db() as conn:
+                coll = create_collection(conn, name, MEMES_DIR)
+        except (ValueError, sqlite3.IntegrityError) as e:
+            return jsonify({"error": str(e)}), 409
+        log.info("collection created: slug=%s name=%s", coll["slug"], coll["name"])
+        return jsonify(coll), 201
+
+    @app.route("/api/collections/<slug>", methods=["PUT"])
+    def rename_collection_route(slug):
+        data = request.get_json()
+        name = (data or {}).get("name", "").strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        try:
+            with get_db() as conn:
+                coll = rename_collection(conn, slug, name, MEMES_DIR)
+        except (ValueError, sqlite3.IntegrityError) as e:
+            return jsonify({"error": str(e)}), 409
+        log.info(
+            "collection renamed: old_slug=%s new_slug=%s name=%s", slug, coll["slug"], coll["name"]
+        )
+        return jsonify(coll)
+
+    @app.route("/api/collections/<slug>", methods=["DELETE"])
+    def delete_collection_route(slug):
+        try:
+            with get_db() as conn:
+                delete_collection_if_empty(conn, slug, MEMES_DIR)
+        except sqlite3.IntegrityError:
+            return jsonify({"error": "Collection still has memes"}), 409
+        log.info("collection deleted: slug=%s", slug)
+        return "", 204
+
+    # -------------------------------------------------------------------
+    # Meme endpoints
+    # -------------------------------------------------------------------
 
     @app.route("/api/memes")
     def list_memes():
@@ -193,6 +256,10 @@ def create_app(config=None):
         fav_filter = request.args.get("fav", "").strip() == "1"
         sort = request.args.get("sort", "")
 
+        has_collection_param = "collection" in request.args
+        collection_raw = request.args.get("collection", "").strip()
+        collection = collection_raw if collection_raw else None
+
         with get_db() as conn:
             result = query_memes(
                 conn,
@@ -203,6 +270,8 @@ def create_app(config=None):
                 tag_filters=tag_filters,
                 fav_filter=fav_filter,
                 sort=sort,
+                collection=collection,
+                has_collection_param=has_collection_param,
             )
 
         return jsonify(
@@ -221,18 +290,22 @@ def create_app(config=None):
         if not files:
             return jsonify({"error": "No files provided"}), 400
 
+        collection = request.form.get("collection", "").strip() or None
+
         results = []
         with get_db() as conn:
+            dest_dir = meme_file_dir(MEMES_DIR, collection)
+            dest_dir.mkdir(parents=True, exist_ok=True)
             for f in files:
                 ext = Path(f.filename).suffix.lower()
                 if ext not in ALLOWED_EXTENSIONS:
                     continue
 
                 basename = sanitize_filename(f.filename)
-                dest, basename = resolve_unique_path(MEMES_DIR, basename)
+                dest, basename = resolve_unique_path(dest_dir, basename)
                 f.save(dest)
 
-                meme, is_dup = register_meme(conn, dest)
+                meme, is_dup = register_meme(conn, dest, collection=collection)
                 if is_dup:
                     meme["duplicate"] = True
                     log.info("upload skipped (duplicate): filename=%s id=%s", basename, meme["id"])
@@ -251,6 +324,8 @@ def create_app(config=None):
         if not url:
             return jsonify({"error": "No URL provided"}), 400
 
+        collection = (data or {}).get("collection", "").strip() or None
+
         try:
             downloads = scrape_url(url, max_files=config["scrape"]["max_files"])
         except ValueError as e:
@@ -259,12 +334,14 @@ def create_app(config=None):
         results = []
         has_new = False
         with get_db() as conn:
+            dest_dir = meme_file_dir(MEMES_DIR, collection)
+            dest_dir.mkdir(parents=True, exist_ok=True)
             for basename, content, source in downloads:
-                dest, basename = resolve_unique_path(MEMES_DIR, basename)
+                dest, basename = resolve_unique_path(dest_dir, basename)
                 with open(dest, "wb") as f:
                     f.write(content)
 
-                meme, is_dup = register_meme(conn, dest, source=source)
+                meme, is_dup = register_meme(conn, dest, collection=collection, source=source)
                 if is_dup:
                     meme["duplicate"] = True
                     log.info("url upload skipped (duplicate): url=%s id=%s", url, meme["id"])
@@ -333,6 +410,12 @@ def create_app(config=None):
             if tags is not None:
                 set_tags(conn, meme_id, tags)
                 log.info("tags updated: id=%s filename=%s tags=%s", meme_id, filename, tags)
+
+            # Move to different collection
+            if "collection" in data:
+                new_coll = data["collection"] or None
+                move_meme(conn, meme_id, new_coll, MEMES_DIR)
+                log.info("collection updated: id=%s collection=%s", meme_id, new_coll)
 
             result = get_meme(conn, meme_id)
         return jsonify(result)

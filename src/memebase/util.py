@@ -12,6 +12,20 @@ _RESERVED_CHARS = re.compile(r'[<>:"/\\|?*#%\x00-\x1f]')
 _RESERVED_NAMES = re.compile(r"^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\.|$)", re.IGNORECASE)
 
 
+def slugify(name: str) -> str:
+    """Convert a name to a URL-safe slug: lowercase, hyphens, no special chars.
+
+    Raises ValueError if the resulting slug is empty.
+    """
+    name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
+    name = name.lower()
+    name = re.sub(r"[^a-z0-9]+", "-", name)
+    name = name.strip("-")
+    if not name:
+        raise ValueError("Name produces an empty slug")
+    return name
+
+
 def parse_ext(filename: str) -> str:
     """Extract dotless lowercase extension from a filename (e.g. 'photo.PNG' -> 'png')."""
     return Path(filename).suffix.lstrip(".").lower()

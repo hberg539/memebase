@@ -9,6 +9,7 @@ from memebase.migrate import apply_migrations, get_version, set_version
 
 _initial = importlib.import_module("memebase.migrations.0001_initial_schema")
 _metadata = importlib.import_module("memebase.migrations.0002_metadata")
+_collections = importlib.import_module("memebase.migrations.0003_collections")
 
 
 class TestGetSetVersion:
@@ -27,7 +28,7 @@ class TestApplyMigrations:
         """Fresh DB gets all migrations applied and correct version."""
         conn = sqlite3.connect(":memory:")
         apply_migrations(conn)
-        assert get_version(conn) == 2
+        assert get_version(conn) == 3
         # Verify tables exist
         tables = conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
@@ -35,15 +36,26 @@ class TestApplyMigrations:
         table_names = [r[0] for r in tables]
         assert "memes" in table_names
         assert "tags" in table_names
+        assert "collections" in table_names
+        # Verify collections has id, slug, name columns
+        coll_cols = conn.execute("PRAGMA table_info(collections)").fetchall()
+        coll_col_names = [r[1] for r in coll_cols]
+        assert "id" in coll_col_names
+        assert "slug" in coll_col_names
+        assert "name" in coll_col_names
+        # Verify memes.collection column exists
+        cols = conn.execute("PRAGMA table_info(memes)").fetchall()
+        col_names = [r[1] for r in cols]
+        assert "collection_id" in col_names
 
     def test_already_migrated_database(self):
         """DB already at latest version has no migrations applied."""
         conn = sqlite3.connect(":memory:")
         apply_migrations(conn)
-        assert get_version(conn) == 2
+        assert get_version(conn) == 3
         # Running again should be a no-op
         apply_migrations(conn)
-        assert get_version(conn) == 2
+        assert get_version(conn) == 3
 
     def test_metadata_columns_added(self):
         """Migration 0002 adds source and file metadata columns."""
@@ -72,7 +84,7 @@ class TestApplyMigrations:
             ("old-id", "hash", 1, "old.png", "png"),
         )
         apply_migrations(conn)
-        assert get_version(conn) == 2
+        assert get_version(conn) == 3
         row = conn.execute(
             "SELECT filename, source_url, width FROM memes WHERE id = 'old-id'"
         ).fetchone()
@@ -166,7 +178,7 @@ class TestMetadataBackfill:
             apply_migrations(conn)
         row = conn.execute("SELECT width, height FROM memes WHERE id = 'm1'").fetchone()
         assert row == (None, None)
-        assert get_version(conn) == 2
+        assert get_version(conn) == 3
 
     def test_already_filled_rows_are_left_alone(self, tmp_path):
         Image.new("RGB", (64, 32)).save(tmp_path / "old.png")

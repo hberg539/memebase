@@ -55,6 +55,8 @@ async function uploadFiles(files) {
 	files.forEach((f) => {
 		form.append("files", f);
 	});
+	const coll = getActiveCollection();
+	if (coll) form.append("collection", coll);
 	addModal.close();
 	try {
 		const uploaded = await Api.uploadFiles(form);
@@ -86,7 +88,7 @@ urlDownload.addEventListener("click", async () => {
 	urlDownload.disabled = true;
 	urlDownload.textContent = "Downloading...";
 	try {
-		const memes = await Api.downloadUrl(url);
+		const memes = await Api.downloadUrl(url, getActiveCollection());
 		addModal.close();
 		urlInput.value = "";
 		const dupes = memes.filter((m) => m.duplicate);
@@ -162,5 +164,3 @@ document.addEventListener("paste", (e) => {
 	e.preventDefault();
 	uploadFiles(files);
 });
-
-load();

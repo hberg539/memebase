@@ -25,8 +25,10 @@ const Api = (() => {
 			return res.json();
 		},
 
-		async downloadUrl(url) {
-			const res = await _json("/api/memes/url", "POST", { url });
+		async downloadUrl(url, collection) {
+			const body = { url };
+			if (collection) body.collection = collection;
+			const res = await _json("/api/memes/url", "POST", body);
 			if (!res.ok) {
 				const e = await res.json();
 				throw new Error(e.error || "Download failed");
@@ -73,6 +75,39 @@ const Api = (() => {
 				remove,
 			});
 			return res.json();
+		},
+
+		async listCollections() {
+			const res = await fetch("/api/collections");
+			return res.json();
+		},
+
+		async createCollection(name) {
+			const res = await _json("/api/collections", "POST", { name });
+			if (!res.ok) {
+				const e = await res.json();
+				throw new Error(e.error || "Failed to create collection");
+			}
+			return res.json();
+		},
+
+		async renameCollection(slug, name) {
+			const res = await _json(`/api/collections/${encodeURIComponent(slug)}`, "PUT", { name });
+			if (!res.ok) {
+				const e = await res.json();
+				throw new Error(e.error || "Failed to rename collection");
+			}
+			return res.json();
+		},
+
+		async deleteCollection(slug) {
+			const res = await fetch(`/api/collections/${encodeURIComponent(slug)}`, {
+				method: "DELETE",
+			});
+			if (!res.ok) {
+				const e = await res.json();
+				throw new Error(e.error || "Failed to delete collection");
+			}
 		},
 	};
 })();

@@ -46,6 +46,54 @@ def init_db() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Collection operations
+# ---------------------------------------------------------------------------
+
+
+def get_all_collections(conn: sqlite3.Connection) -> list[dict]:
+    """Return all collections sorted by name (slug + name only, for API)."""
+    rows = conn.execute("SELECT slug, name FROM collections ORDER BY name").fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_collection(conn: sqlite3.Connection, slug: str) -> dict | None:
+    """Get a single collection by slug, or None. Returns {id, slug, name}."""
+    row = conn.execute("SELECT id, slug, name FROM collections WHERE slug = ?", (slug,)).fetchone()
+    return dict(row) if row else None
+
+
+def insert_collection(conn: sqlite3.Connection, coll_id: str, slug: str, name: str) -> None:
+    """Insert a new collection."""
+    conn.execute(
+        "INSERT INTO collections (id, slug, name) VALUES (?, ?, ?)",
+        (coll_id, slug, name),
+    )
+
+
+def update_collection(conn: sqlite3.Connection, coll_id: str, new_slug: str, new_name: str) -> None:
+    """Update a collection's slug and name by id."""
+    conn.execute(
+        "UPDATE collections SET slug = ?, name = ? WHERE id = ?",
+        (new_slug, new_name, coll_id),
+    )
+
+
+def delete_collection(conn: sqlite3.Connection, coll_id: str) -> None:
+    """Delete a collection by id. Raises IntegrityError if memes still reference it."""
+    conn.execute("DELETE FROM collections WHERE id = ?", (coll_id,))
+
+
+def update_meme_collection(
+    conn: sqlite3.Connection, meme_id: str, collection_id: str | None
+) -> None:
+    """Update the collection_id for a meme."""
+    conn.execute(
+        "UPDATE memes SET collection_id = ?, updated_at = datetime('now') WHERE id = ?",
+        (collection_id, meme_id),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Single meme operations
 # ---------------------------------------------------------------------------
 
@@ -53,10 +101,12 @@ def init_db() -> None:
 def get_meme(conn: sqlite3.Connection, meme_id: str) -> Meme | None:
     """Get a meme dict with tags by id, or None if not found."""
     row = conn.execute(
-        "SELECT id, sha256, size, filename, ext, description, favorite, created_at, "
-        "source_url, source_site, source_author, source_text, source_date, "
-        "width, height, duration "
-        "FROM memes WHERE id = ?",
+        "SELECT m.id, m.sha256, m.size, m.filename, m.ext, m.description, "
+        "m.favorite, m.created_at, c.slug AS collection, "
+        "m.source_url, m.source_site, m.source_author, m.source_text, m.source_date, "
+        "m.width, m.height, m.duration "
+        "FROM memes m LEFT JOIN collections c ON m.collection_id = c.id "
+        "WHERE m.id = ?",
         (meme_id,),
     ).fetchone()
     if not row:
@@ -69,16 +119,28 @@ def get_meme(conn: sqlite3.Connection, meme_id: str) -> Meme | None:
     return d
 
 
-def get_meme_filename(conn: sqlite3.Connection, meme_id: str) -> str | None:
-    """Get just the filename for a meme, or None if not found."""
-    row = conn.execute("SELECT filename FROM memes WHERE id = ?", (meme_id,)).fetchone()
-    return row["filename"] if row else None
+def get_meme_filename(conn: sqlite3.Connection, meme_id: str) -> tuple[str, str | None] | None:
+    """Get (filename, collection_slug) for a meme, or None if not found."""
+    row = conn.execute(
+        "SELECT m.filename, c.slug AS collection "
+        "FROM memes m LEFT JOIN collections c ON m.collection_id = c.id "
+        "WHERE m.id = ?",
+        (meme_id,),
+    ).fetchone()
+    return (row["filename"], row["collection"]) if row else None
 
 
-def get_meme_for_serving(conn: sqlite3.Connection, meme_id: str) -> tuple[str, str] | None:
-    """Get (filename, sha256) for serving a meme file, or None if not found."""
-    row = conn.execute("SELECT filename, sha256 FROM memes WHERE id = ?", (meme_id,)).fetchone()
-    return (row["filename"], row["sha256"]) if row else None
+def get_meme_for_serving(
+    conn: sqlite3.Connection, meme_id: str
+) -> tuple[str, str, str | None] | None:
+    """Get (filename, sha256, collection_slug) for serving a meme file, or None."""
+    row = conn.execute(
+        "SELECT m.filename, m.sha256, c.slug AS collection "
+        "FROM memes m LEFT JOIN collections c ON m.collection_id = c.id "
+        "WHERE m.id = ?",
+        (meme_id,),
+    ).fetchone()
+    return (row["filename"], row["sha256"], row["collection"]) if row else None
 
 
 def find_by_sha256(conn: sqlite3.Connection, sha256: str) -> str | None:
@@ -95,21 +157,24 @@ def insert_meme(
     filename: str,
     ext: str,
     *,
+    collection_id: str | None = None,
     file_meta: FileMeta | None = None,
     source: SourceMeta | None = None,
 ) -> None:
-    """Insert a new meme row with optional probed file and scraped source metadata."""
+    """Insert a new meme row with optional collection, probed file, and source metadata."""
     fm: FileMeta = file_meta or {"width": None, "height": None, "duration": None}
     conn.execute(
-        "INSERT INTO memes (id, sha256, size, filename, ext, width, height, duration, "
+        "INSERT INTO memes (id, sha256, size, filename, ext, collection_id, "
+        "width, height, duration, "
         "source_url, source_site, source_author, source_text, source_date) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             meme_id,
             sha256,
             size,
             filename,
             ext,
+            collection_id,
             fm["width"],
             fm["height"],
             fm["duration"],
@@ -146,13 +211,19 @@ def update_filename(conn: sqlite3.Connection, meme_id: str, filename: str, ext: 
     )
 
 
-def delete_meme_row(conn: sqlite3.Connection, meme_id: str) -> str | None:
-    """Delete a meme row, returning the filename (for file cleanup), or None if not found."""
+def delete_meme_row(conn: sqlite3.Connection, meme_id: str) -> tuple[str, str | None] | None:
+    """Delete a meme row, returning (filename, collection_slug) for file cleanup, or None."""
     row = conn.execute(
-        "DELETE FROM memes WHERE id = ? RETURNING filename",
+        "SELECT m.filename, c.slug AS collection "
+        "FROM memes m LEFT JOIN collections c ON m.collection_id = c.id "
+        "WHERE m.id = ?",
         (meme_id,),
     ).fetchone()
-    return row["filename"] if row else None
+    if not row:
+        return None
+    result = (row["filename"], row["collection"])
+    conn.execute("DELETE FROM memes WHERE id = ?", (meme_id,))
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -211,10 +282,12 @@ def _build_filter_clauses(
     ext_filter: str | None,
     tag_filters: list[str],
     fav_filter: bool,
+    collection: str | None = None,
+    has_collection_param: bool = False,
 ) -> dict[str, tuple[list[str], list[str]]]:
     """Build SQL WHERE clause parts and params for each filter dimension.
 
-    Returns dict with keys: search, ext, tag, fav.
+    Returns dict with keys: search, ext, tag, fav, coll.
     Each value is (parts, params).
     """
     search_parts: list[str] = []
@@ -239,11 +312,21 @@ def _build_filter_clauses(
 
     fav_parts = ["m.favorite = 1"] if fav_filter else []
 
+    coll_parts: list[str] = []
+    coll_params: list[str] = []
+    if has_collection_param:
+        if collection is None:
+            coll_parts.append("m.collection_id IS NULL")
+        else:
+            coll_parts.append("m.collection_id = (SELECT id FROM collections WHERE slug = ?)")
+            coll_params.append(collection)
+
     return {
         "search": (search_parts, search_params),
         "ext": (ext_parts, ext_params),
         "tag": (tag_parts, tag_params),
         "fav": (fav_parts, []),
+        "coll": (coll_parts, coll_params),
     }
 
 
@@ -259,31 +342,34 @@ def _get_facet_counts(
     ext_parts, ext_params = clauses["ext"]
     tag_parts, tag_params = clauses["tag"]
     fav_parts, _ = clauses["fav"]
+    coll_parts, coll_params = clauses["coll"]
 
-    # Base set from search only - for the full list of available exts/tags
-    base_where = _build_where(search_parts)
+    # Base set from search + collection - for the full list of available exts/tags
+    base_parts = search_parts + coll_parts
+    base_params = search_params + coll_params
+    base_where = _build_where(base_parts)
 
     all_exts_rows = conn.execute(
         f"""SELECT m.ext, COUNT(*) as c
             FROM memes m{base_where}
             GROUP BY m.ext ORDER BY m.ext""",
-        search_params,
+        base_params,
     ).fetchall()
     all_exts = {r["ext"]: r["c"] for r in all_exts_rows if r["ext"]}
 
     all_tags_rows = conn.execute(
         f"""SELECT t.tag, COUNT(DISTINCT m.id) as c
             FROM memes m JOIN tags t ON m.id = t.meme_id
-            {_build_where(["1=1", *search_parts])}
+            {_build_where(["1=1", *base_parts])}
             GROUP BY t.tag ORDER BY t.tag""",
-        search_params,
+        base_params,
     ).fetchall()
     all_tags = {r["tag"]: r["c"] for r in all_tags_rows}
 
     # Faceted counts: each dimension excludes itself, includes all others
-    # Ext counts (search + tag + fav, but NOT ext)
-    ext_facet_parts = search_parts + tag_parts + fav_parts
-    ext_facet_params = search_params + tag_params
+    # Ext counts (search + coll + tag + fav, but NOT ext)
+    ext_facet_parts = search_parts + coll_parts + tag_parts + fav_parts
+    ext_facet_params = search_params + coll_params + tag_params
     ext_facet_where = _build_where(ext_facet_parts)
     ext_rows = conn.execute(
         f"""SELECT m.ext, COUNT(*) as c
@@ -294,9 +380,9 @@ def _get_facet_counts(
     ext_counts = {r["ext"]: r["c"] for r in ext_rows if r["ext"]}
     exts = {e: ext_counts.get(e, 0) for e in all_exts}
 
-    # Tag counts (search + ext + fav + active tags)
-    tag_facet_parts = search_parts + ext_parts + tag_parts + fav_parts
-    tag_facet_params = search_params + ext_params + tag_params
+    # Tag counts (search + coll + ext + fav + active tags)
+    tag_facet_parts = search_parts + coll_parts + ext_parts + tag_parts + fav_parts
+    tag_facet_params = search_params + coll_params + ext_params + tag_params
     tag_facet_where = _build_where(["1=1", *tag_facet_parts])
     tag_rows = conn.execute(
         f"""SELECT t.tag, COUNT(DISTINCT m.id) as c
@@ -308,9 +394,9 @@ def _get_facet_counts(
     tag_counts = {r["tag"]: r["c"] for r in tag_rows}
     tags = {t: tag_counts.get(t, 0) for t in all_tags}
 
-    # Fav count (search + ext + tag, but NOT fav)
-    fav_facet_parts = search_parts + ext_parts + tag_parts + ["m.favorite = 1"]
-    fav_facet_params = search_params + ext_params + tag_params
+    # Fav count (search + coll + ext + tag, but NOT fav)
+    fav_facet_parts = search_parts + coll_parts + ext_parts + tag_parts + ["m.favorite = 1"]
+    fav_facet_params = search_params + coll_params + ext_params + tag_params
     fav_facet_where = _build_where(fav_facet_parts)
     fav_count = conn.execute(
         f"SELECT COUNT(*) as c FROM memes m{fav_facet_where}",
@@ -329,6 +415,8 @@ def query_memes(
     tag_filters: list[str] | None = None,
     fav_filter: bool = False,
     sort: str = "",
+    collection: str | None = None,
+    has_collection_param: bool = False,
 ) -> dict[str, Any]:
     """Run a faceted meme query.
 
@@ -337,12 +425,19 @@ def query_memes(
       total   - total matching count
       filters - {exts: {ext: count}, tags: {tag: count}, fav_count: int}
     """
-    clauses = _build_filter_clauses(q, ext_filter, tag_filters or [], fav_filter)
+    clauses = _build_filter_clauses(
+        q,
+        ext_filter,
+        tag_filters or [],
+        fav_filter,
+        collection=collection,
+        has_collection_param=has_collection_param,
+    )
     order = SORT_OPTIONS.get(sort, "m.created_at DESC")
 
     # Combine all clause parts for the full filter
-    all_parts = [p for key in ("search", "ext", "tag", "fav") for p in clauses[key][0]]
-    all_params = [p for key in ("search", "ext", "tag") for p in clauses[key][1]]
+    all_parts = [p for key in ("search", "ext", "tag", "fav", "coll") for p in clauses[key][0]]
+    all_params = [p for key in ("search", "ext", "tag", "coll") for p in clauses[key][1]]
     where_sql = _build_where(all_parts)
 
     total = conn.execute(f"SELECT COUNT(*) as c FROM memes m{where_sql}", all_params).fetchone()[
@@ -355,8 +450,9 @@ def query_memes(
     offset = (page - 1) * page_size
     rows = conn.execute(
         f"SELECT m.id, m.sha256, m.size, m.filename, m.ext, m.description, "
-        f"m.favorite, m.created_at "
-        f"FROM memes m{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
+        f"m.favorite, m.created_at, c.slug AS collection "
+        f"FROM memes m LEFT JOIN collections c ON m.collection_id = c.id"
+        f"{where_sql} ORDER BY {order} LIMIT ? OFFSET ?",
         [*all_params, page_size, offset],
     ).fetchall()
 

@@ -58,6 +58,12 @@ class AiSuggestion(TypedDict, total=False):
     tags: list[str]
 
 
+class Collection(TypedDict):
+    id: str
+    slug: str
+    name: str
+
+
 class SourceMeta(TypedDict):
     source_url: str
     source_site: str
@@ -82,6 +88,7 @@ class Meme(TypedDict):
     favorite: int
     created_at: str
     tags: list[str]
+    collection: str | None
     source_url: NotRequired[str | None]
     source_site: NotRequired[str | None]
     source_author: NotRequired[str | None]

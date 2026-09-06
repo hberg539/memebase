@@ -5,7 +5,24 @@ import pytest
 from PIL import Image
 
 from memebase.migrate import apply_migrations
-from memebase.service import delete_meme, register_meme, rename_meme, resolve_unique_path
+from memebase.service import (
+    create_collection,
+    delete_collection_if_empty,
+    delete_meme,
+    move_meme,
+    register_meme,
+    rename_collection,
+    rename_meme,
+    resolve_unique_path,
+)
+
+
+def _make_db():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    apply_migrations(conn)
+    return conn
 
 
 class TestResolveUniquePath:
@@ -29,31 +46,34 @@ class TestResolveUniquePath:
 
 
 class TestRegisterMeme:
-    def _make_db(self):
-        conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        apply_migrations(conn)
-        return conn
-
     def test_new_file(self, tmp_path):
-        conn = self._make_db()
+        conn = _make_db()
         f = tmp_path / "test.png"
         f.write_bytes(b"unique content")
         meme, is_dup = register_meme(conn, f)
         assert not is_dup
         assert meme["filename"] == "test.png"
-        assert f.exists()  # new files stay on disk
+        assert meme["collection"] is None
+        assert f.exists()
+
+    def test_new_file_with_collection(self, tmp_path):
+        conn = _make_db()
+        conn.execute(
+            "INSERT INTO collections (id, slug, name) VALUES ('coll-cats', 'cats', 'Cats')"
+        )
+        f = tmp_path / "test.png"
+        f.write_bytes(b"unique content")
+        meme, is_dup = register_meme(conn, f, collection="cats")
+        assert not is_dup
+        assert meme["collection"] == "cats"
 
     def test_duplicate_file(self, tmp_path):
-        conn = self._make_db()
-        # Insert first file
+        conn = _make_db()
         f1 = tmp_path / "first.png"
         f1.write_bytes(b"same content")
         meme1, is_dup1 = register_meme(conn, f1)
         assert not is_dup1
 
-        # Insert duplicate
         f2 = tmp_path / "second.png"
         f2.write_bytes(b"same content")
         meme2, is_dup2 = register_meme(conn, f2)
@@ -62,7 +82,7 @@ class TestRegisterMeme:
         assert f2.exists()
 
     def test_probes_image_dimensions(self, tmp_path):
-        conn = self._make_db()
+        conn = _make_db()
         f = tmp_path / "real.png"
         Image.new("RGB", (320, 200)).save(f)
         meme, _ = register_meme(conn, f)
@@ -71,7 +91,7 @@ class TestRegisterMeme:
         assert meme["duration"] is None
 
     def test_stores_source(self, tmp_path):
-        conn = self._make_db()
+        conn = _make_db()
         f = tmp_path / "tweet.png"
         f.write_bytes(b"content")
         source = {
@@ -86,7 +106,7 @@ class TestRegisterMeme:
             assert meme[key] == value
 
     def test_no_source_leaves_columns_null(self, tmp_path):
-        conn = self._make_db()
+        conn = _make_db()
         f = tmp_path / "plain.png"
         f.write_bytes(b"content")
         meme, _ = register_meme(conn, f)
@@ -94,7 +114,7 @@ class TestRegisterMeme:
         assert meme["source_site"] is None
 
     def test_duplicate_does_not_attach_source(self, tmp_path):
-        conn = self._make_db()
+        conn = _make_db()
         f1 = tmp_path / "first.png"
         f1.write_bytes(b"same")
         register_meme(conn, f1)
@@ -114,10 +134,7 @@ class TestRegisterMeme:
 
 class TestRenameMeme:
     def _setup(self, tmp_path):
-        conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        apply_migrations(conn)
+        conn = _make_db()
         f = tmp_path / "old_name.png"
         f.write_bytes(b"data")
         meme, _ = register_meme(conn, f)
@@ -149,10 +166,7 @@ class TestRenameMeme:
 
 class TestDeleteMeme:
     def _setup(self, tmp_path):
-        conn = sqlite3.connect(":memory:")
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        apply_migrations(conn)
+        conn = _make_db()
         f = tmp_path / "doomed.png"
         f.write_bytes(b"data")
         meme, _ = register_meme(conn, f)
@@ -180,3 +194,133 @@ class TestDeleteMeme:
         conn, _ = self._setup(tmp_path)
         with pytest.raises(LookupError):
             delete_meme(conn, "nonexistent-id", tmp_path)
+
+    @patch("memebase.service.delete_thumbnails")
+    def test_delete_in_collection(self, mock_thumbs, tmp_path):
+        conn = _make_db()
+        conn.execute(
+            "INSERT INTO collections (id, slug, name) VALUES ('coll-cats', 'cats', 'Cats')"
+        )
+        coll_dir = tmp_path / "cats"
+        coll_dir.mkdir()
+        f = coll_dir / "cat.png"
+        f.write_bytes(b"meow")
+        meme, _ = register_meme(conn, f, collection="cats")
+        filename = delete_meme(conn, meme["id"], tmp_path)
+        assert filename == "cat.png"
+        assert not f.exists()
+
+
+class TestMoveMeme:
+    def test_move_to_collection(self, tmp_path):
+        conn = _make_db()
+        conn.execute(
+            "INSERT INTO collections (id, slug, name) VALUES ('coll-cats', 'cats', 'Cats')"
+        )
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        move_meme(conn, meme["id"], "cats", tmp_path)
+        assert (tmp_path / "cats" / "meme.png").exists()
+        assert not (tmp_path / "meme.png").exists()
+        row = conn.execute("SELECT collection_id FROM memes WHERE id = ?", (meme["id"],)).fetchone()
+        assert row["collection_id"] == "coll-cats"
+
+    def test_move_to_none(self, tmp_path):
+        conn = _make_db()
+        conn.execute(
+            "INSERT INTO collections (id, slug, name) VALUES ('coll-cats', 'cats', 'Cats')"
+        )
+        coll_dir = tmp_path / "cats"
+        coll_dir.mkdir()
+        f = coll_dir / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f, collection="cats")
+        move_meme(conn, meme["id"], None, tmp_path)
+        assert (tmp_path / "meme.png").exists()
+        assert not (coll_dir / "meme.png").exists()
+        row = conn.execute("SELECT collection_id FROM memes WHERE id = ?", (meme["id"],)).fetchone()
+        assert row["collection_id"] is None
+
+    def test_noop_same_collection(self, tmp_path):
+        conn = _make_db()
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        move_meme(conn, meme["id"], None, tmp_path)
+        assert (tmp_path / "meme.png").exists()
+
+    def test_filename_collision(self, tmp_path):
+        conn = _make_db()
+        conn.execute(
+            "INSERT INTO collections (id, slug, name) VALUES ('coll-cats', 'cats', 'Cats')"
+        )
+        coll_dir = tmp_path / "cats"
+        coll_dir.mkdir()
+        (coll_dir / "meme.png").write_bytes(b"existing")
+        f = tmp_path / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f)
+        move_meme(conn, meme["id"], "cats", tmp_path)
+        assert (coll_dir / "meme_1.png").exists()
+        row = conn.execute("SELECT filename FROM memes WHERE id = ?", (meme["id"],)).fetchone()
+        assert row["filename"] == "meme_1.png"
+
+
+class TestCreateCollection:
+    def test_creates_collection(self, tmp_path):
+        conn = _make_db()
+        result = create_collection(conn, "My Cats", tmp_path)
+        assert result["slug"] == "my-cats"
+        assert result["name"] == "My Cats"
+        assert (tmp_path / "my-cats").is_dir()
+
+    def test_duplicate_raises(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        with pytest.raises(sqlite3.IntegrityError):
+            create_collection(conn, "Cats", tmp_path)
+
+
+class TestRenameCollection:
+    def test_renames_collection(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        result = rename_collection(conn, "cats", "Dogs", tmp_path)
+        assert result["slug"] == "dogs"
+        assert result["name"] == "Dogs"
+        assert (tmp_path / "dogs").is_dir()
+        assert not (tmp_path / "cats").exists()
+
+    def test_rename_preserves_meme_association(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        coll_dir = tmp_path / "cats"
+        f = coll_dir / "meme.png"
+        f.write_bytes(b"data")
+        meme, _ = register_meme(conn, f, collection="cats")
+        rename_collection(conn, "cats", "Dogs", tmp_path)
+        from memebase.db import get_meme as db_get_meme
+
+        updated = db_get_meme(conn, meme["id"])
+        assert updated["collection"] == "dogs"
+
+
+class TestDeleteCollection:
+    def test_deletes_empty(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        delete_collection_if_empty(conn, "cats", tmp_path)
+        assert not (tmp_path / "cats").exists()
+        row = conn.execute("SELECT * FROM collections WHERE slug = 'cats'").fetchone()
+        assert row is None
+
+    def test_blocks_nonempty(self, tmp_path):
+        conn = _make_db()
+        create_collection(conn, "Cats", tmp_path)
+        coll_dir = tmp_path / "cats"
+        f = coll_dir / "meme.png"
+        f.write_bytes(b"data")
+        register_meme(conn, f, collection="cats")
+        with pytest.raises(sqlite3.IntegrityError):
+            delete_collection_if_empty(conn, "cats", tmp_path)

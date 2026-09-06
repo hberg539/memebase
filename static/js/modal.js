@@ -6,6 +6,7 @@ const mName = document.getElementById("m-name");
 const mExt = document.getElementById("m-ext");
 const mTags = document.getElementById("m-tags");
 const mDesc = document.getElementById("m-desc");
+const mColl = document.getElementById("m-collection");
 const mDate = document.getElementById("m-date");
 const infoModal = document.getElementById("info-modal");
 const infoList = document.getElementById("info-list");
@@ -137,6 +138,12 @@ grid.addEventListener("click", (e) => {
 	mCopy.innerHTML =
 		icon(canCopy(filename) ? "clipboard" : "download", 14) +
 		(canCopy(filename) ? " Copy" : " Download");
+	let collHtml = '<option value="">No collection</option>';
+	for (const c of allCollections) {
+		const sel = c.slug === card.dataset.collection ? " selected" : "";
+		collHtml += `<option value="${esc(c.slug)}"${sel}>${esc(c.name)}</option>`;
+	}
+	mColl.innerHTML = collHtml;
 	autoOpenBtn.disabled = isVideo(filename);
 	autoOpenBtn.title = isVideo(filename) ? "Auto-detect is not available for videos" : "";
 	modal.showModal();
@@ -247,6 +254,7 @@ document.getElementById("m-save").addEventListener("click", async () => {
 		.split(",")
 		.map((t) => t.trim())
 		.filter(Boolean);
+	body.collection = mColl.value;
 	try {
 		await Api.updateMeme(currentId, body);
 	} catch (e) {

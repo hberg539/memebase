@@ -3,6 +3,12 @@
 <div class="sticky-top">
 <header>
   <h1 id="logo" style="cursor:pointer">{{ title }}{% if version %} <sup class="version-tag">v{{ version }}</sup>{% endif %}</h1>
+  <div class="collection-picker">
+    <select id="collection-select">
+      <option value="">No collection</option>
+    </select>
+    <button class="btn-icon" id="btn-coll-manage" title="Manage collections"><i data-lucide="settings" style="width:16px;height:16px"></i></button>
+  </div>
   <input type="search" id="search" placeholder="Search memes...">
   <button id="clear-all" disabled>Clear</button>
   <select id="sort">
@@ -79,6 +85,20 @@
     </div>
   </div>
 </dialog>
+<dialog id="coll-modal">
+  <div class="modal-body">
+    <h3>Manage collections</h3>
+    <div id="coll-list"></div>
+    <div class="coll-add-row">
+      <input id="coll-new-name" type="text" placeholder="New collection name">
+      <button class="btn-download" id="coll-add-btn">Add</button>
+    </div>
+    <div class="modal-actions">
+      <span style="flex:1"></span>
+      <button class="btn-close" id="coll-close">Close</button>
+    </div>
+  </div>
+</dialog>
 <div class="filters" id="filters"></div>
 </div>
 <div class="grid{{ ' masonry' if grid_layout == 'masonry' else '' }}" id="grid"></div>
@@ -116,6 +136,12 @@
     <div>
       <label for="m-tags">Tags (comma-separated)</label>
       <input id="m-tags" type="text" placeholder="e.g. reaction, funny, pepe">
+    </div>
+    <div>
+      <label for="m-collection">Collection</label>
+      <select id="m-collection">
+        <option value="">No collection</option>
+      </select>
     </div>
     <div>
       <label for="m-desc">Description</label>

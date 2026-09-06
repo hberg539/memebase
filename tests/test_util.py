@@ -1,4 +1,6 @@
-from memebase.util import normalize_tags, parse_ext, sanitize_filename
+import pytest
+
+from memebase.util import normalize_tags, parse_ext, sanitize_filename, slugify
 
 
 def test_normal_filename():
@@ -144,3 +146,39 @@ def test_tags_empty_filtered():
 
 def test_tags_all_empty():
     assert normalize_tags(["", " "]) == set()
+
+
+# ---------------------------------------------------------------------------
+# slugify
+# ---------------------------------------------------------------------------
+
+
+class TestSlugify:
+    def test_basic(self):
+        assert slugify("My Collection") == "my-collection"
+
+    def test_special_chars(self):
+        assert slugify("Hello, World!") == "hello-world"
+
+    def test_numbers(self):
+        assert slugify("Collection 42") == "collection-42"
+
+    def test_unicode_stripped(self):
+        assert slugify("cafe meme") == "cafe-meme"
+
+    def test_accented(self):
+        assert slugify("cafe") == "cafe"
+
+    def test_collapses_hyphens(self):
+        assert slugify("a---b") == "a-b"
+
+    def test_strips_leading_trailing(self):
+        assert slugify("--hello--") == "hello"
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError, match="empty slug"):
+            slugify("   ")
+
+    def test_symbols_only_raises(self):
+        with pytest.raises(ValueError, match="empty slug"):
+            slugify("!!!")
