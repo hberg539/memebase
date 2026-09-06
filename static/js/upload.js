@@ -52,7 +52,9 @@ fileInput.addEventListener("change", () => {
 
 async function uploadFiles(files) {
 	const form = new FormData();
-	files.forEach((f) => form.append("files", f));
+	files.forEach((f) => {
+		form.append("files", f);
+	});
 	addModal.close();
 	try {
 		const uploaded = await Api.uploadFiles(form);

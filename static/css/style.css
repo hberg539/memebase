@@ -94,7 +94,9 @@ header select {
 	border-radius: 8px;
 	overflow: hidden;
 	background: var(--color-bg-surface);
-	transition: transform 0.15s, box-shadow 0.15s;
+	transition:
+		transform 0.15s,
+		box-shadow 0.15s;
 	position: relative;
 }
 .card.card-new {
@@ -113,7 +115,9 @@ header select {
 .card.removing {
 	opacity: 0;
 	transform: scale(0.9);
-	transition: opacity 0.2s ease, transform 0.2s ease;
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease;
 }
 .card:hover {
 	transform: translateY(-2px);
@@ -230,8 +234,11 @@ dialog {
 	height: fit-content;
 	opacity: 0;
 	transform: scale(0.95) translateY(-10px);
-	transition: opacity 0.15s ease, transform 0.15s ease, overlay 0.15s ease allow-discrete, display
-		0.15s ease allow-discrete;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease,
+		overlay 0.15s ease allow-discrete,
+		display 0.15s ease allow-discrete;
 }
 dialog[open] {
 	opacity: 1;
@@ -258,7 +265,10 @@ dialog::backdrop {
 	-webkit-backdrop-filter: blur(0px);
 	backdrop-filter: blur(0px);
 	transition:
-		background 0.15s ease, backdrop-filter 0.15s ease, overlay 0.15s ease allow-discrete, display 0.15s ease allow-discrete;
+		background 0.15s ease,
+		backdrop-filter 0.15s ease,
+		overlay 0.15s ease allow-discrete,
+		display 0.15s ease allow-discrete;
 }
 dialog[open]::backdrop {
 	background: rgba(0, 0, 0, 0.7);
@@ -463,7 +473,9 @@ dialog.closing::backdrop {
 	padding: 2.5rem 1rem;
 	text-align: center;
 	cursor: pointer;
-	transition: border-color 0.15s, background 0.15s;
+	transition:
+		border-color 0.15s,
+		background 0.15s;
 	color: var(--color-text-placeholder);
 }
 .drop-zone:hover,
@@ -589,7 +601,9 @@ dialog.closing::backdrop {
 	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 	opacity: 0;
 	pointer-events: none;
-	transition: opacity 0.15s ease, transform 0.15s ease;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
 }
 .select-bar.visible {
 	opacity: 1;
@@ -693,7 +707,9 @@ dialog.closing::backdrop {
 	font-weight: 500;
 	transform: translateY(-1rem);
 	opacity: 0;
-	transition: transform 0.3s ease, opacity 0.3s ease;
+	transition:
+		transform 0.3s ease,
+		opacity 0.3s ease;
 	max-width: 500px;
 	word-break: break-word;
 	display: flex;

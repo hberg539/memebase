@@ -1,20 +1,20 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.10
+    rev: v0.16.6
     hooks:
       - id: ruff-format
       - id: ruff
         args: [--fix]
   - repo: https://github.com/biomejs/pre-commit
-    rev: v0.6.1
+    rev: v2.5.12
     hooks:
       - id: biome-format
-        additional_dependencies: ["@biomejs/biome@1.9.4"]
+        additional_dependencies: ["@biomejs/biome@2.5.12"]
       - id: biome-lint
-        additional_dependencies: ["@biomejs/biome@1.9.4"]
+        additional_dependencies: ["@biomejs/biome@2.5.12"]
         args: [--unsafe]
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.0.0
+    rev: v4.4.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]

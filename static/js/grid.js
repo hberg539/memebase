@@ -28,8 +28,10 @@ function getPerPage() {
 	}
 	const style = getComputedStyle(grid);
 	const thumbSize =
-		Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--thumb-size")) ||
-		220;
+		Number.parseInt(
+			getComputedStyle(document.documentElement).getPropertyValue("--thumb-size"),
+			10,
+		) || 220;
 	const gap = Number.parseFloat(style.columnGap) || 16;
 	const contentWidth =
 		grid.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight);
@@ -208,7 +210,7 @@ grid.addEventListener(
 paginationEl.addEventListener("click", async (e) => {
 	const btn = e.target.closest(".page-btn");
 	if (!btn || btn.disabled) return;
-	currentPage = Number.parseInt(btn.dataset.page);
+	currentPage = Number.parseInt(btn.dataset.page, 10);
 	prevIds = new Set();
 	window.scrollTo({ top: 0 });
 	await load(search.value);

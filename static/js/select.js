@@ -20,7 +20,9 @@ function restoreSelection() {
 
 function clearSelection() {
 	selectedIds.clear();
-	grid.querySelectorAll(".card.selected").forEach((c) => c.classList.remove("selected"));
+	grid.querySelectorAll(".card.selected").forEach((c) => {
+		c.classList.remove("selected");
+	});
 	updateSelectBar();
 }
 

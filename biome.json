@@ -1,12 +1,19 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
 	"formatter": {
 		"lineWidth": 100
 	},
 	"linter": {
 		"rules": {
 			"complexity": {
-				"noForEach": "off"
+				"noForEach": "off",
+				"noImportantStyles": "off"
+			},
+			"correctness": {
+				"noUnusedVariables": "off"
+			},
+			"style": {
+				"noDescendingSpecificity": "off"
 			}
 		}
 	}
