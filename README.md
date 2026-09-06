@@ -16,6 +16,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
   - [Docker (recommended)](#docker-recommended)
   - [Local development](#local-development)
 - [Configuration](#configuration)
+- [Collections](#collections)
 - [Hotkeys](#hotkeys)
 - [Themes](#themes)
   - [Custom themes](#custom-themes)
@@ -31,6 +32,7 @@ A self-hosted, web-based home for your memes. Upload, tag, search, and hoard you
 
 - **Upload** - Drag-and-drop, paste from clipboard, or add a URL. Supports page scraping via [gallery-dl](https://github.com/mikf/gallery-dl) ([hundreds of supported sites](https://github.com/mikf/gallery-dl/blob/master/docs/supportedsites.md))
 - **Search & filter** - Full-text search with filters for extension, tag, and favorites
+- **Collections** - Sort your memes into separate collections, each with its own folder on disk
 - **AI auto-detect** - Let a vision model generate filenames, descriptions, and tags for you
 - **Bulk operations** - Select a bunch of memes at once for tagging, auto-detect, or deleting
 - **Copy & download** - One click to copy a meme to your clipboard or download it
@@ -103,6 +105,12 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see [Supported models](#supported-models)) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
+
+## Collections
+
+Too many memes for one pile? Split them into collections. Pick one from the dropdown in the header, and the gear button next to it lets you add or rename them.
+
+Uploads go into whatever collection is selected, and you can move a meme later via the Collection field in its popup. On disk, each collection is just a folder under `data/memes/`.
 
 ## Hotkeys
 
@@ -213,7 +221,8 @@ Everything lives in `./data`:
 data/
   memes.db       # SQLite database
   config.toml    # Your configuration
-  memes/         # Uploaded meme files
+  memes/         # Uploaded meme files (no collection)
+    <slug>/      # One subfolder per collection
   thumbnails/    # Generated thumbnails (if enabled)
   themes/        # Custom CSS themes (optional)
 ```
