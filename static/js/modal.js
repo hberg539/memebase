@@ -9,6 +9,7 @@ const mDesc = document.getElementById("m-desc");
 const mDate = document.getElementById("m-date");
 const infoModal = document.getElementById("info-modal");
 const infoList = document.getElementById("info-list");
+const mShareUrl = document.getElementById("m-share-url");
 let currentId = null;
 let currentMeta = null;
 
@@ -103,6 +104,13 @@ grid.addEventListener("click", (e) => {
 		Api.updateMeme(card.dataset.id, { favorite: newFav });
 		return;
 	}
+	const copyUrlBtn = e.target.closest(".btn-copy-url");
+	if (copyUrlBtn) {
+		e.stopPropagation();
+		const shareUrl = getMemeShareUrl(copyUrlBtn.dataset.id, copyUrlBtn.dataset.filename);
+		copyText(shareUrl, copyUrlBtn);
+		return;
+	}
 	const copyBtn = e.target.closest(".btn-copy");
 	if (copyBtn) {
 		e.stopPropagation();
@@ -124,6 +132,7 @@ grid.addEventListener("click", (e) => {
 	}
 	mName.value = stem;
 	mExt.textContent = ext;
+	mShareUrl.value = getMemeShareUrl(currentId, filename);
 	mTags.value = card.dataset.tags;
 	mDesc.value = card.dataset.desc;
 	const mFav = document.getElementById("m-fav");
@@ -133,6 +142,8 @@ grid.addEventListener("click", (e) => {
 	mDate.textContent = card.dataset.created ? card.dataset.created.replace("T", " ") : "";
 	document.getElementById("m-size").textContent = formatSize(Number(card.dataset.size) || 0);
 	document.getElementById("m-info").innerHTML = `${icon("info", 14)} Details`;
+	const mCopyUrl = document.getElementById("m-copy-url");
+	mCopyUrl.innerHTML = `${icon("clipboard", 14)} Copy`;
 	const mCopy = document.getElementById("m-copy");
 	mCopy.innerHTML =
 		icon(canCopy(filename) ? "clipboard" : "download", 14) +
@@ -143,6 +154,18 @@ grid.addEventListener("click", (e) => {
 	modal.focus();
 	refreshIcons();
 	loadMeta(currentId);
+});
+
+mName.addEventListener("input", () => {
+	const filename = mName.value.trim() + mExt.textContent;
+	if (currentId) {
+		mShareUrl.value = getMemeShareUrl(currentId, filename);
+	}
+});
+
+mShareUrl.addEventListener("click", () => {
+	mShareUrl.select();
+	copyText(mShareUrl.value, document.getElementById("m-copy-url"));
 });
 
 /* -- Favorite -- */
@@ -166,6 +189,10 @@ document.getElementById("m-fav").addEventListener("click", async () => {
 });
 
 /* -- Copy / Download -- */
+
+document.getElementById("m-copy-url").addEventListener("click", () => {
+	copyText(mShareUrl.value, document.getElementById("m-copy-url"));
+});
 
 document.getElementById("m-copy").addEventListener("click", () => {
 	const mCopy = document.getElementById("m-copy");

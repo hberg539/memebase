@@ -445,3 +445,77 @@ class TestBulkTags:
         assert resp.status_code == 200
         assert mock_remove.call_count == 1
         mock_add.assert_not_called()
+
+
+class TestPublicUrl:
+    def test_default_public_url_in_index(self, monkeypatch):
+        monkeypatch.delenv("MEMEBASE_PUBLIC_URL", raising=False)
+        monkeypatch.delenv("PUBLIC_URL", raising=False)
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "";' in resp.data
+
+    def test_env_memebase_public_url_in_index(self, monkeypatch):
+        monkeypatch.setenv("MEMEBASE_PUBLIC_URL", "memes.example.com/memes")
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "https://memes.example.com/memes";' in resp.data
+
+    def test_env_public_url_fallback_in_index(self, monkeypatch):
+        monkeypatch.delenv("MEMEBASE_PUBLIC_URL", raising=False)
+        monkeypatch.setenv("PUBLIC_URL", "https://share.memes.com")
+        app = create_app(config=TEST_CONFIG)
+        app.config["TESTING"] = True
+        client = app.test_client()
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'window.PUBLIC_URL = "https://share.memes.com";' in resp.data
+
+
+class TestOpenGraph:
+    def test_base_html_has_open_graph_tags(self, client):
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert b'<meta property="og:site_name"' in resp.data
+        assert b'<meta property="og:type" content="website">' in resp.data
+
+    def test_serve_meme_bot_user_agent_returns_open_graph_html(self, client):
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_for_serving",
+                return_value=("test.png", "abc123sha"),
+            ),
+            patch("memebase.app.get_meme", return_value=FAKE_MEME),
+        ):
+            resp = client.get(
+                "/memes/test-id-1234/test.png",
+                headers={"User-Agent": "TelegramBot (like TwitterBot)"},
+            )
+        assert resp.status_code == 200
+        assert b'<meta property="og:image"' in resp.data
+        assert b'<meta property="og:title" content="test.png">' in resp.data
+
+    def test_serve_meme_raw_param_serves_raw_file(self, client, tmp_path):
+        fake_file = tmp_path / "test.png"
+        fake_file.write_bytes(b"\x89PNGfake")
+        with (
+            patch("memebase.app.get_db"),
+            patch(
+                "memebase.app.get_meme_for_serving",
+                return_value=("test.png", "abc123sha"),
+            ),
+            patch("memebase.app.MEMES_DIR", tmp_path),
+        ):
+            resp = client.get(
+                "/memes/test-id-1234/test.png?raw=1",
+                headers={"User-Agent": "TelegramBot (like TwitterBot)"},
+            )
+        assert resp.status_code == 200
+        assert resp.data == b"\x89PNGfake"

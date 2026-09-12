@@ -1,5 +1,8 @@
+import mimetypes
+import os
 import re
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import (
     Flask,
@@ -21,7 +24,7 @@ from memebase.common import (
     ROOT_DIR,
     THEMES_DIR,
 )
-from memebase.config import load_version
+from memebase.config import get_config, load_version
 from memebase.db import (
     add_tags,
     get_all_tags,
@@ -53,6 +56,18 @@ log = get_logger(__name__)
 
 _THEME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
+BOT_USER_AGENTS = (
+    "telegrambot",
+    "twitterbot",
+    "facebookexternalhit",
+    "slackbot",
+    "linkedinbot",
+    "whatsapp",
+    "skypeuripreview",
+    "discordbot",
+    "mattermost",
+)
+
 
 def _safe_theme_name(name: str) -> str:
     if _THEME_RE.match(name):
@@ -66,6 +81,18 @@ def _not_found_image():
 
 def create_app(config=None):
     VERSION = load_version()
+    if config is None:
+        config = get_config()
+
+    env_public_url = os.getenv("MEMEBASE_PUBLIC_URL") or os.getenv("PUBLIC_URL")
+    if env_public_url is not None and env_public_url.strip() != "":
+        public_url = env_public_url.strip()
+    else:
+        server_cfg = config.get("server", {})
+        public_url = (server_cfg.get("public_url") or "").strip()
+
+    if public_url and not public_url.startswith(("http://", "https://")):
+        public_url = f"https://{public_url}"
 
     app = Flask(
         __name__,
@@ -108,8 +135,10 @@ def create_app(config=None):
             thumbnails_enabled=config["thumbnails"]["enabled"],
             thumbnails_skip_types=config["thumbnails"]["skip_types"],
             thumbnails_format=config["thumbnails"]["format"],
+            public_url=public_url,
         )
 
+    @app.route("/memes/<meme_id>/raw/<path:filename>")
     @app.route("/memes/<meme_id>/<path:filename>")
     def serve_meme(meme_id, filename):
         with get_db() as conn:
@@ -117,6 +146,49 @@ def create_app(config=None):
         if not result:
             return _not_found_image()
         real_filename, sha256 = result
+
+        is_raw_route = (
+            request.path.startswith(f"/memes/{meme_id}/raw/") or request.args.get("raw") == "1"
+        )
+        user_agent = request.headers.get("User-Agent", "").lower()
+        is_bot = any(bot in user_agent for bot in BOT_USER_AGENTS)
+        accept = request.headers.get("Accept", "").lower()
+        wants_html = (
+            "text/html" in accept
+            and not accept.startswith("image/")
+            and not accept.startswith("video/")
+        )
+
+        if not is_raw_route and (is_bot or wants_html):
+            with get_db() as conn:
+                meme = get_meme(conn, meme_id)
+            if meme:
+                ext = Path(real_filename).suffix.lower()
+                is_vid = ext in {".mp4", ".webm"}
+                is_gif = ext == ".gif"
+                mime_type = mimetypes.guess_type(real_filename)[0] or (
+                    "video/mp4" if is_vid else "image/png"
+                )
+                share_base = public_url.rstrip("/") if public_url else request.host_url.rstrip("/")
+                if public_url and share_base.endswith("/memes"):
+                    share_url = f"{share_base}/{meme_id}/{quote(filename)}"
+                    raw_url = f"{share_base}/{meme_id}/raw/{quote(filename)}"
+                else:
+                    share_url = f"{share_base}/memes/{meme_id}/{quote(filename)}"
+                    raw_url = f"{share_base}/memes/{meme_id}/raw/{quote(filename)}"
+                theme = _safe_theme_name(config["ui"]["theme"])
+                return render_template(
+                    "meme.html",
+                    meme=meme,
+                    title=config["ui"]["title"],
+                    theme=theme,
+                    is_video=is_vid,
+                    is_gif=is_gif,
+                    mime_type=mime_type,
+                    share_url=share_url,
+                    raw_url=raw_url,
+                )
+
         etag = f'"{sha256}"'
         if request.headers.get("If-None-Match") == etag:
             return "", 304
