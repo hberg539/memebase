@@ -102,6 +102,7 @@ On first run, `config.default.toml` gets copied to `./data/config.toml`. Edit th
 | `ai.enabled` | `false` | Turn the AI auto-detect feature on or off (see [AI auto-detect](#ai-auto-detect)) |
 | `ai.model` | `"anthropic/claude-sonnet-4-5-20250929"` | Any LiteLLM-compatible model string (see [Supported models](#supported-models)) |
 | `ai.parallel` | `3` | Max parallel requests during bulk auto-detect |
+| `ai.gif_frames` | `true` | Send up to 12 frames per animated GIF in one auto-detect request |
 | `ai.prompt` | *(see config.toml)* | The prompt sent to the vision model - customize it to change the output style |
 
 ## Hotkeys
@@ -189,6 +190,8 @@ When AI is enabled, an **Auto** button appears in two places:
 - **Bulk selection** - select multiple memes, then click Auto to run AI detection across all of them.
 
 Memes that fail during bulk auto-detect are automatically tagged with `auto-failed`, so you can filter for them later and review by hand.
+
+If the punchline lands in the last frame, Auto gets to see it. For animated GIFs, it sends up to 12 images in playback order with timing labels. Longer animations are sampled across the timeline, including the first and last frames, long pauses and visual changes. Multiple images can cost more to process. If your model only accepts one image per request, or already reads animation, set `ai.gif_frames = false` to send the original GIF instead.
 
 You can customize the `ai.prompt` in `./data/config.toml` to fine-tune how the model names, describes, and tags your memes.
 

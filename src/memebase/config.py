@@ -36,6 +36,7 @@ _DEFAULTS: dict[str, Any] = {
     },
     "ai": {
         "enabled": False,
+        "gif_frames": True,
         "parallel": 3,
     },
     "scrape": {

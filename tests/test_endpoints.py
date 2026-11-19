@@ -41,6 +41,7 @@ TEST_CONFIG = {
     },
     "ai": {
         "enabled": True,
+        "gif_frames": True,
         "model": "gpt-4o",
         "parallel": 3,
         "prompt": "Describe this meme. Tags: {tags}",

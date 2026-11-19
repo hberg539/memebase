@@ -358,7 +358,11 @@ def create_app(config=None):
         log.info("auto-detect started: id=%s filename=%s", meme_id, filename)
         try:
             result = analyze_meme(
-                path, tags, model=ai_cfg["model"], prompt_template=ai_cfg["prompt"]
+                path,
+                tags,
+                model=ai_cfg["model"],
+                prompt_template=ai_cfg["prompt"],
+                gif_frames=ai_cfg["gif_frames"],
             )
         except Exception as e:
             log.exception("auto-detect failed: id=%s filename=%s", meme_id, filename)
@@ -392,7 +396,11 @@ def create_app(config=None):
 
                 try:
                     suggestion = analyze_meme(
-                        path, all_tags, model=ai_cfg["model"], prompt_template=ai_cfg["prompt"]
+                        path,
+                        all_tags,
+                        model=ai_cfg["model"],
+                        prompt_template=ai_cfg["prompt"],
+                        gif_frames=ai_cfg["gif_frames"],
                     )
                 except Exception as e:
                     log.error(
