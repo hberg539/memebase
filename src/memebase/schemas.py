@@ -15,6 +15,7 @@ class GridConfig(TypedDict):
 
 class AiConfig(TypedDict):
     enabled: bool
+    gif_frames: bool
     model: str
     parallel: int
     prompt: str

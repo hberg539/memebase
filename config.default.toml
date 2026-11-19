@@ -31,6 +31,7 @@ enabled = false
 # "ollama/llama3.2-vision"                # Local Ollama (no key needed)
 model = "anthropic/claude-sonnet-4-5-20250929"
 parallel = 3  # max parallel requests for bulk auto-detect
+gif_frames = true  # send up to 12 ordered frames for animated GIFs
 
 prompt = """
 You are a meme connoisseur analyzing a meme image. Be witty and think in classic meme language.

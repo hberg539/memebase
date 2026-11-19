@@ -26,7 +26,7 @@ def test_full_user_config_overrides():
             "format": "jpeg",
             "skip_types": ["gif"],
         },
-        "ai": {"enabled": True, "parallel": 8},
+        "ai": {"enabled": True, "parallel": 8, "gif_frames": False},
         "scrape": {"max_files": 10},
     }
     result = _deep_merge(_DEFAULTS, user)
